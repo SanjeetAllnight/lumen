@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 export async function generateSummary(description: string): Promise<string> {
   try {
     if (!process.env.GEMINI_API_KEY) return description.substring(0, 120);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const prompt = `You are a campus operations assistant. Summarize this student complaint in exactly one short, clear sentence (max 20 words).\n\nComplaint: ${description}`;
     const result = await model.generateContent(prompt);
     return result.response.text().trim().replace(/^["']|["']$/g, "").replace(/^(Summary:|AI Summary:)/i, "").trim();
@@ -18,7 +18,7 @@ export async function generateSummary(description: string): Promise<string> {
 export async function analyzeImage(base64Image: string): Promise<{ title: string; description: string }> {
   try {
     if (!process.env.GEMINI_API_KEY) throw new Error("No API key");
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const base64Data = base64Image.split(",")[1];
     const mimeType = base64Image.split(";")[0].split(":")[1];
 
@@ -49,7 +49,7 @@ export async function analyzeImage(base64Image: string): Promise<{ title: string
 export async function refineText(title: string, description: string): Promise<{ title: string; description: string }> {
   try {
     if (!process.env.GEMINI_API_KEY) throw new Error("No API key");
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const prompt = `You are a professional facility management assistant. A student reported a campus issue with the following title and description. Refine and improve the text to make it clearer, more professional, and actionable while preserving the original intent. Return ONLY a JSON object in this exact format: {\"title\": \"...\", \"description\": \"...\"}\n\nOriginal Title: ${title}\nOriginal Description: ${description}`;
     
     const result = await model.generateContent(prompt);
