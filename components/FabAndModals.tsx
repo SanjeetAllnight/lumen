@@ -114,7 +114,23 @@ export default function FabAndModals() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Location</label>
-                  <input required value={reportLoc} onChange={(e) => setReportLoc(e.target.value)} type="text" className="w-full bg-surface-container-high border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors" placeholder="Where is this happening?" />
+                  <select required value={reportLoc} onChange={(e) => setReportLoc(e.target.value)} className="w-full bg-surface-container-high border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors appearance-none custom-select">
+                    <option value="" disabled>Select campus location...</option>
+                    <option value="Computer Dept">Computer Dept</option>
+                    <option value="IT Dept">IT Dept</option>
+                    <option value="Civil Dept">Civil Dept</option>
+                    <option value="ETC Dept">ETC Dept</option>
+                    <option value="ENE Dept">ENE Dept</option>
+                    <option value="Mech Dept">Mech Dept</option>
+                    <option value="Library">Library</option>
+                    <option value="Canteen">Canteen</option>
+                    <option value="Main Gate">Main Gate</option>
+                    <option value="Admin Block">Admin Block</option>
+                    <option value="Academic Block">Academic Block</option>
+                    <option value="Mining Dept">Mining Dept</option>
+                    <option value="Hostel">Hostel</option>
+                    <option value="Ground">Ground</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Category</label>

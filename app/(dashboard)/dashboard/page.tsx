@@ -3,14 +3,24 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGlobal } from '@/components/GlobalProvider';
+import { HeroIssueSkeleton, IssueListSkeleton, EmptyIssues } from '@/components/Skeletons';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { issues, upvoteIssue } = useGlobal();
+  const { issues, upvoteIssue, isLoading } = useGlobal();
 
-  const issue1 = issues.find(i => i.id === "north-lib");
-  const issue2 = issues.find(i => i.id === "maker-space");
-  const issue3 = issues.find(i => i.id === "main-gate");
+  const issue1 = issues.find(i => i.id === "north-lib") || issues[0];
+  const issue2 = issues.find(i => i.id === "maker-space") || issues[1];
+  const issue3 = issues.find(i => i.id === "main-gate") || issues[2];
+
+  if (isLoading) {
+    return (
+      <div className="max-w-[1400px] mx-auto p-6 md:p-10 space-y-8">
+        <HeroIssueSkeleton />
+        <IssueListSkeleton count={3} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1400px] mx-auto p-6 md:p-10 space-y-12">
@@ -49,7 +59,7 @@ export default function DashboardPage() {
                     <div className="w-14 h-14 rounded-full border-4 border-surface-container-lowest bg-surface-container-high flex items-center justify-center text-xs font-bold text-on-surface-variant">+842</div>
                   </div>
                   <div className="text-sm">
-                    <div className="text-on-surface text-2xl font-black">{issue1?.affected} Students</div>
+                    <div className="text-on-surface text-2xl font-black">{issue1?.affectedCount ?? 842} Students</div>
                     <div className="text-on-surface-variant font-bold uppercase tracking-widest text-[10px]">Actively Affected</div>
                   </div>
                 </div>
@@ -71,7 +81,7 @@ export default function DashboardPage() {
                 <div className="text-on-surface-variant text-xs font-bold uppercase tracking-[0.2em]">Upvotes</div>
                 <div className="mt-2 text-[10px] text-primary underline font-bold uppercase">View Details &rarr;</div>
               </div>
-              <button onClick={() => upvoteIssue("north-lib")} className="w-full py-6 bg-error text-white rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-error/40 hover:scale-[1.05] active:scale-95 transition-all flex items-center justify-center gap-3 text-lg glow-support">
+              <button onClick={() => upvoteIssue(issue1?.id || "north-lib")} className="w-full py-6 bg-error text-white rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-error/40 hover:scale-[1.04] active:scale-90 transition-all duration-150 flex items-center justify-center gap-3 text-lg glow-support select-none">
                 <span className="material-symbols-outlined fill-1">thumb_up</span>
                 Support Issue
               </button>

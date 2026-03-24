@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { useToast } from "./ToastProvider";
 
 export type Comment = {
   id: string;
@@ -19,12 +20,23 @@ export type Issue = {
   aiSummary?: string;
   category: string;
   location: string;
-  status: "reported" | "in_progress" | "resolved" | "Urgent" | "Scheduled" | "New Report";
+  status: "reported" | "in_progress" | "resolved" | string;
   upvotes: number;
   affectedCount: number;
   createdAt: string;
   comments?: Comment[];
   isNew?: boolean;
+};
+
+export type CampusEvent = {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  date: string | null;
+  attendees: number;
+  createdAt: string | null;
 };
 
 export type Activity = {
@@ -39,6 +51,7 @@ export type Activity = {
 
 type GlobalContextType = {
   issues: Issue[];
+  events: CampusEvent[];
   activities: Activity[];
   isLoading: boolean;
   upvoteIssue: (id: string) => void;
@@ -52,7 +65,6 @@ type GlobalContextType = {
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 
-// Seed data for static activity feed (not stored in DB)
 const STATIC_ACTIVITIES: Activity[] = [
   { id: "a1", type: "issue", title: "⚠️ Multiple reports incoming: Block A", description: "Our team is heading to elevator shaft 4 right now.", tag: "Active Response", icon: "construction", timestamp: "JUST NOW" },
   { id: "a2", type: "alert", title: "🚨 Network Drop: Critical Node 7", description: "The Central Library's main router just went dark. IT is on it.", tag: "Service Interruption", icon: "wifi_off", timestamp: "2m AGO" },
@@ -62,48 +74,57 @@ const STATIC_ACTIVITIES: Activity[] = [
 
 export function GlobalProvider({ children }: { children: ReactNode }) {
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [events, setEvents] = useState<CampusEvent[]>([]);
   const [activities, setActivities] = useState<Activity[]>(STATIC_ACTIVITIES);
   const [isLoading, setIsLoading] = useState(true);
+  const { showToast } = useToast();
 
-  // Fetch issues on mount
-  const fetchIssues = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/issues");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data: Issue[] = await res.json();
-      setIssues(data);
+      const [issueRes, eventRes] = await Promise.all([
+        fetch("/api/issues"),
+        fetch("/api/events"),
+      ]);
+      const issueData: Issue[] = issueRes.ok ? await issueRes.json() : [];
+      const eventData: CampusEvent[] = eventRes.ok ? await eventRes.json() : [];
+
+      // Auto-seed if both are empty
+      if (issueData.length === 0 && eventData.length === 0) {
+        await fetch("/api/seed", { method: "POST" });
+        const [sI, sE] = await Promise.all([fetch("/api/issues"), fetch("/api/events")]);
+        setIssues(sI.ok ? await sI.json() : []);
+        setEvents(sE.ok ? await sE.json() : []);
+      } else {
+        setIssues(issueData);
+        setEvents(eventData);
+      }
     } catch (err) {
-      console.error("[GlobalProvider] fetchIssues:", err);
+      console.error("[GlobalProvider] fetchData:", err);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchIssues();
-  }, [fetchIssues]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Optimistic upvote → sync with API
   const upvoteIssue = useCallback((id: string) => {
-    // Optimistic update
     setIssues((prev) =>
       prev.map((issue) =>
         issue.id === id ? { ...issue, upvotes: issue.upvotes + 1, affectedCount: issue.affectedCount + 1 } : issue
       )
     );
-    // Fire and forget API call
-    fetch(`/api/issues/${id}/upvote`, { method: "PATCH" }).catch((err) => {
-      console.error("[upvoteIssue]", err);
-      // Roll back on failure
+    showToast("Your support has been counted! 👍", "success", "thumb_up");
+
+    fetch(`/api/issues/${id}/upvote`, { method: "PATCH" }).catch(() => {
       setIssues((prev) =>
         prev.map((issue) =>
           issue.id === id ? { ...issue, upvotes: issue.upvotes - 1, affectedCount: issue.affectedCount - 1 } : issue
         )
       );
+      showToast("Upvote failed. Please try again.", "error", "error");
     });
-  }, []);
+  }, [showToast]);
 
-  // Create new issue via API (with AI summary)
   const addIssue = useCallback(
     async (newIssue: Omit<Issue, "id" | "upvotes" | "affectedCount" | "createdAt" | "comments" | "isNew">) => {
       try {
@@ -115,8 +136,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         if (!res.ok) throw new Error("Failed to create issue");
         const created: Issue = await res.json();
         setIssues((prev) => [{ ...created, isNew: true }, ...prev]);
-
-        // Add to activity feed
+        showToast("Issue reported successfully! 🚨", "success", "campaign");
         addActivity({
           type: "issue",
           title: `🚨 New Report: ${created.title}`,
@@ -126,29 +146,23 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         });
       } catch (err) {
         console.error("[addIssue]", err);
-        alert("Failed to submit issue. Please try again.");
+        showToast("Failed to submit issue. Try again.", "error", "error");
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [showToast]
   );
 
-  // Fetch a single issue by ID
   const getIssue = useCallback(async (id: string): Promise<Issue | null> => {
+    const cached = issues.find((i) => i.id === id);
+    if (cached) return cached;
     try {
-      // Try in-memory cache first
-      const cached = issues.find((i) => i.id === id);
-      if (cached) return cached;
-
       const res = await fetch(`/api/issues/${id}`);
       if (!res.ok) return null;
       return await res.json();
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }, [issues]);
 
-  // Add a comment via API
   const addComment = useCallback(async (issueId: string, content: string): Promise<Comment | null> => {
     try {
       const res = await fetch("/api/comments", {
@@ -157,22 +171,22 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ issueId, content, author: "Current User" }),
       });
       if (!res.ok) throw new Error("Failed to post comment");
-      return await res.json();
+      const comment = await res.json();
+      showToast("Comment posted! 💬", "success", "forum");
+      return comment;
     } catch (err) {
       console.error("[addComment]", err);
+      showToast("Failed to post comment.", "error", "error");
       return null;
     }
-  }, []);
+  }, [showToast]);
 
-  // Fetch comments for an issue from API
   const getComments = useCallback(async (issueId: string): Promise<Comment[]> => {
     try {
       const res = await fetch(`/api/comments?issueId=${issueId}`);
       if (!res.ok) return [];
       return await res.json();
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   }, []);
 
   const addActivity = useCallback((activity: Omit<Activity, "id" | "timestamp">) => {
@@ -184,24 +198,14 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
 
   const addFeedback = useCallback((type: string, message: string) => {
     console.log("[Feedback]", type, message);
-    alert("Feedback submitted successfully! Thank you.");
-  }, []);
+    showToast("Feedback submitted! Thank you 🙏", "success", "favorite");
+  }, [showToast]);
 
   return (
-    <GlobalContext.Provider
-      value={{
-        issues,
-        activities,
-        isLoading,
-        upvoteIssue,
-        addComment,
-        addIssue,
-        getIssue,
-        getComments,
-        addFeedback,
-        addActivity,
-      }}
-    >
+    <GlobalContext.Provider value={{
+      issues, events, activities, isLoading,
+      upvoteIssue, addComment, addIssue, getIssue, getComments, addFeedback, addActivity,
+    }}>
       {children}
     </GlobalContext.Provider>
   );
@@ -209,8 +213,6 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
 
 export function useGlobal() {
   const context = useContext(GlobalContext);
-  if (context === undefined) {
-    throw new Error("useGlobal must be used within a GlobalProvider");
-  }
+  if (context === undefined) throw new Error("useGlobal must be used within a GlobalProvider");
   return context;
 }

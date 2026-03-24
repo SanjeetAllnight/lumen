@@ -352,3 +352,44 @@
   0% { transform: translate(0, 0) scale(1); }
   100% { transform: translate(10vw, 10vw) scale(1.2); }
 }
+
+/* ── Campus Map Animations ─────────────────────────────────── */
+@keyframes issue-glow {
+  0%, 100% { box-shadow: 0 0 0px 0px rgba(248,113,113,0); transform: scale(1); }
+  50%       { box-shadow: 0 0 22px 4px rgba(248,113,113,0.22); transform: scale(1.018); }
+}
+
+@keyframes event-glow {
+  0%, 100% { box-shadow: 0 0 0px 0px rgba(52,211,153,0); transform: scale(1); }
+  50%       { box-shadow: 0 0 16px 3px rgba(52,211,153,0.18); transform: scale(1.012); }
+}
+
+@keyframes hot-zone {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes grid-drift {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(40px, 40px); }
+}
+
+@keyframes float-particle {
+  0%   { transform: translateY(0px) translateX(0px); opacity: 0.4; }
+  33%  { transform: translateY(-18px) translateX(8px); opacity: 0.7; }
+  66%  { transform: translateY(-8px) translateX(-6px); opacity: 0.5; }
+  100% { transform: translateY(0px) translateX(0px); opacity: 0.4; }
+}
+
+@keyframes scan-pulse {
+  0%, 100% { opacity: 0.04; }
+  50%       { opacity: 0.10; }
+}
+
+.zone-issue-pulse  { animation: issue-glow   3.5s ease-in-out infinite; }
+.zone-event-pulse  { animation: event-glow   4s   ease-in-out infinite; }
+.zone-hot-anim     { animation: issue-glow   2s   ease-in-out infinite; }
+.float-particle    { animation: float-particle var(--dur, 6s) ease-in-out infinite; }
+.map-scan          { animation: scan-pulse   4s   ease-in-out infinite; }
+
