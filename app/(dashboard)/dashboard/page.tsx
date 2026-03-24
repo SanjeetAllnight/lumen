@@ -3,23 +3,32 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGlobal } from '@/components/GlobalProvider';
+import { HeroIssueSkeleton, IssueListSkeleton, EmptyIssues } from '@/components/Skeletons';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { issues, upvoteIssue } = useGlobal();
+  const { issues, upvoteIssue, isLoading } = useGlobal();
 
-  const issue1 = issues.find(i => i.id === "north-lib");
-  const issue2 = issues.find(i => i.id === "maker-space");
-  const issue3 = issues.find(i => i.id === "main-gate");
+  const issue1 = issues.find(i => i.id === "north-lib") || issues[0];
+  const issue2 = issues.find(i => i.id === "maker-space") || issues[1];
+  const issue3 = issues.find(i => i.id === "main-gate") || issues[2];
+
+  if (isLoading) {
+    return (
+      <div className="max-w-[1400px] mx-auto p-6 md:p-10 space-y-8">
+        <HeroIssueSkeleton />
+        <IssueListSkeleton count={3} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1400px] mx-auto p-6 md:p-10 space-y-12">
-      {/* 🔥 Top Campus Issue Section */}
+      {/* Top Campus Issue Section */}
       <section className="space-y-4">
         <div className="flex items-center justify-between px-2">
           <span className="text-error font-black tracking-[0.2em] text-[10px] uppercase flex items-center gap-2 bg-error/10 px-3 py-1 rounded-full border border-error/20">
-            <span className="w-2 h-2 rounded-full bg-error animate-ping"></span>
-            Emergency Priority • #1 Issue on Campus Right Now
+            High Priority Issue
           </span>
           <span className="text-on-surface-variant text-xs">Updated 2m ago</span>
         </div>
@@ -30,10 +39,6 @@ export default function DashboardPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <span className="px-4 py-1.5 rounded-full bg-error/20 text-error border border-error/30 text-[10px] font-bold uppercase tracking-widest">Facility Crisis</span>
                 <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">Main Campus</span>
-                <div className="flex items-center gap-2 text-error font-bold text-sm ml-auto lg:ml-0">
-                  <span className="material-symbols-outlined text-xl">trending_up</span>
-                  <span>Extreme Velocity (+410%)</span>
-                </div>
               </div>
               <h2 className="text-4xl md:text-6xl font-headline font-bold text-on-surface leading-tight tracking-tight">
                 North Library Air <br className="hidden md:block"/><span className="text-error">Conditioning Outage</span>
@@ -49,7 +54,7 @@ export default function DashboardPage() {
                     <div className="w-14 h-14 rounded-full border-4 border-surface-container-lowest bg-surface-container-high flex items-center justify-center text-xs font-bold text-on-surface-variant">+842</div>
                   </div>
                   <div className="text-sm">
-                    <div className="text-on-surface text-2xl font-black">{issue1?.affectedCount} Students</div>
+                    <div className="text-on-surface text-2xl font-black">{issue1?.affectedCount ?? 842} Students</div>
                     <div className="text-on-surface-variant font-bold uppercase tracking-widest text-[10px]">Actively Affected</div>
                   </div>
                 </div>
@@ -66,12 +71,11 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="relative z-10 flex flex-col items-center gap-4 min-w-[240px]">
-              <div onClick={() => router.push('/issue/north-lib')} className="bg-surface-container-high/50 p-8 rounded-3xl border border-white/5 text-center w-full cursor-pointer hover:bg-surface-container-highest transition-colors">
-                <div className="text-6xl font-headline font-black text-on-surface mb-1 tracking-tighter">{issue1?.upvotes}</div>
-                <div className="text-on-surface-variant text-xs font-bold uppercase tracking-[0.2em]">Upvotes</div>
-                <div className="mt-2 text-[10px] text-primary underline font-bold uppercase">View Details &rarr;</div>
+              <div className="bg-surface-container-high/50 p-8 pt-10 pb-10 rounded-3xl border border-white/5 text-center w-full">
+                <div className="text-7xl font-headline font-black text-on-surface mb-2 tracking-tighter">{issue1?.upvotes}</div>
+                <div className="text-on-surface-variant text-sm font-bold uppercase tracking-[0.2em]">Upvotes</div>
               </div>
-              <button onClick={() => upvoteIssue("north-lib")} className="w-full py-6 bg-error text-white rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-error/40 hover:scale-[1.05] active:scale-95 transition-all flex items-center justify-center gap-3 text-lg glow-support">
+              <button onClick={() => upvoteIssue(issue1?.id || "north-lib")} className="w-full py-6 bg-error text-white rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-error/40 hover:scale-[1.04] active:scale-90 transition-all duration-150 flex items-center justify-center gap-3 text-lg glow-support select-none">
                 <span className="material-symbols-outlined fill-1">thumb_up</span>
                 Support Issue
               </button>
@@ -85,10 +89,6 @@ export default function DashboardPage() {
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full"></div>
         <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-              Live System Status: Optimal
-            </div>
             <h1 className="text-5xl md:text-7xl font-headline font-bold text-on-surface leading-none tracking-tighter">
               The Campus <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-tertiary">Heartbeat.</span>
             </h1>
@@ -96,10 +96,10 @@ export default function DashboardPage() {
               Real-time student insights, trending campus issues, and critical updates mapped in 3D for the modern observatory.
             </p>
             <div className="flex gap-4">
-              <button className="px-8 py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
+              <button onClick={() => router.push('/map')} className="px-8 py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
                 View Heatmap
               </button>
-              <button className="px-8 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors">
+              <button onClick={() => router.push('/complaints')} className="px-8 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors">
                 Active Reports
               </button>
             </div>
@@ -110,12 +110,6 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-primary text-4xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
                 <h4 className="text-3xl font-headline font-bold">14.2k</h4>
                 <p className="text-on-surface-variant text-sm">Active Students</p>
-              </div>
-              <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-secondary/10 translate-y-8">
-                <span className="material-symbols-outlined text-secondary text-4xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>person_alert</span>
-                <h4 className="text-3xl font-headline font-bold">3,291</h4>
-                <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest mt-1">Students Affected Right Now</p>
-                <p className="text-slate-500 text-[9px]">Across all active issues</p>
               </div>
               <div className="glass-panel p-6 rounded-3xl border border-white/5">
                 <span className="material-symbols-outlined text-tertiary text-4xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>stadium</span>
@@ -137,7 +131,7 @@ export default function DashboardPage() {
         <div className="flex items-end justify-between px-2">
           <div className="space-y-1">
             <span className="text-tertiary font-bold tracking-[0.2em] text-[10px] uppercase">Real-Time Hub</span>
-            <h2 className="text-4xl font-headline font-bold text-on-surface">🔥 Trending Issues</h2>
+            <h2 className="text-4xl font-headline font-bold text-on-surface">Trending Issues</h2>
           </div>
           <a className="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium flex items-center gap-2" href="#">
             View all trends <span className="material-symbols-outlined text-sm">arrow_forward</span>
@@ -188,9 +182,6 @@ export default function DashboardPage() {
                     <span>Support</span>
                   </button>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); router.push('/issue/maker-space'); }} className="w-12 h-12 flex items-center justify-center rounded-xl glass-panel border border-white/10 text-on-surface hover:bg-white/10 transition-colors tooltip" data-tooltip="View Details">
-                  <span className="material-symbols-outlined">visibility</span>
-                </button>
               </div>
             </div>
           </div>
@@ -213,13 +204,6 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="mt-8 space-y-6">
-              <div className="flex -space-x-2 mb-4">
-                <img className="w-8 h-8 rounded-full border-2 border-surface object-cover" alt="student profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsb7xA4zlIyEZvspyRU4q9n13AtYY5k7XrhxDzXxYDqNlXLntrk9T5KEqkfjB9j249C8MHDSDv37SNfIVETA3mEx82hcb9qUyvXdLbw4IogqzZTF4Eb2aXWmrek3V0YXl4_MiJ_K-P3jVHCDfGZEeKyPC-avsdtwAOcyUlvI5RfHxramFYo7jyOsyHbVLPrHFwrQuiQZ5IOOMKRn8u6-gXH9_4WBkHce9d1391rBWsK1Ti4bfa7QFLpaizhtJ2KasiJpQUY08G_yY" />
-                <div className="w-8 h-8 rounded-full border-2 border-surface bg-surface-container-highest flex items-center justify-center text-[8px] font-bold text-on-surface-variant">+42</div>
-              </div>
-              <div className="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                <div className="h-full bg-secondary w-full transition-all duration-1000"></div>
-              </div>
               <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
                 <span>Signal Strength</span>
                 <span className="text-secondary">98% Stable</span>
@@ -230,10 +214,10 @@ export default function DashboardPage() {
       </section>
 
       {/* Activity Near You (Map Snip) */}
-      <section className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
+      <section className="space-y-16">
+        <div className="space-y-8">
           <div className="flex items-center justify-between px-2">
-            <h2 className="text-3xl font-headline font-bold text-on-surface">📍 Activity Near You</h2>
+            <h2 className="text-3xl font-headline font-bold text-on-surface">Activity Near You</h2>
             <div className="flex items-center gap-2 text-on-surface-variant text-sm bg-surface-container-low px-4 py-2 rounded-full border border-white/5 glass-panel">
               <span className="material-symbols-outlined text-sm text-secondary">location_on</span>
               Central Hub Area
@@ -251,7 +235,7 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-xs text-on-primary">local_cafe</span>
               </div>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 glass-panel px-4 py-2 rounded-xl text-xs font-bold border border-primary/30 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                ☕ High Density: Student Union
+                High Density: Student Union
               </div>
             </div>
             <div className="absolute bottom-1/3 right-1/4 group">
@@ -260,7 +244,7 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-xs text-on-secondary">sports_soccer</span>
               </div>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 glass-panel px-4 py-2 rounded-xl text-xs font-bold border border-secondary/30 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                ⚽ Intramural Finals Underway
+                Intramural Finals Underway
               </div>
             </div>
             {/* Map Legend / Controls */}
@@ -280,10 +264,10 @@ export default function DashboardPage() {
 
         {/* Recommended Events */}
         <div className="space-y-8">
-          <div className="px-2">
-            <h2 className="text-3xl font-headline font-bold text-on-surface">🎯 Recommended</h2>
+          <div className="px-2 border-t border-white/5 pt-12">
+            <h2 className="text-3xl font-headline font-bold text-on-surface">Recommended</h2>
           </div>
-          <div className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
             {/* Event Item 1 */}
             <div className="glass-panel p-5 rounded-3xl border border-white/5 hover:bg-surface-container-highest/60 transition-all flex gap-4 group cursor-pointer card-hover">
               <div className="flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden relative">
@@ -331,46 +315,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Important Announcements */}
-      <section className="space-y-6">
-        <div className="px-2">
-          <h2 className="text-3xl font-headline font-bold text-on-surface">📢 Important Announcements</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-6 rounded-2xl bg-gradient-to-r from-secondary-container/20 to-transparent border border-secondary/20 border-l-4 border-l-secondary flex items-start gap-4 glass-panel card-hover">
-            <span className="material-symbols-outlined text-secondary text-3xl">info</span>
-            <div>
-              <h4 className="font-bold text-on-surface mb-1 flex items-center gap-2">
-                Tuition Grant Applications Open
-                <span className="text-[10px] bg-secondary/10 text-secondary px-2 py-0.5 rounded-full border border-secondary/20 uppercase tracking-widest">Action Required</span>
-              </h4>
-              <p className="text-sm text-on-surface-variant leading-relaxed">Financial aid window is now open for the Autumn semester. Please submit all documents by October 15th via the portal.</p>
-              <div className="flex items-center gap-3 mt-4">
-                <div className="flex -space-x-2">
-                  <img className="w-6 h-6 rounded-full border border-surface object-cover" alt="student group" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBM4LYXbH5yW4Q2Bo894pz16azlUPsZpeaHbqAba7RPTQBrp5plTCHD1aI1nRzuxxro7RERxmb8NoE5WWo6vF30SWd0LcUAz0Qr6b1ijk2wSgz6QgoJVoDHCsjixeBlzUJH3QLm8wPAUdTzHyTXrsFDhzEPBUCOmKXX1pSN14GYwrdL8hQor4bnnqs-_6C5-a1_sGSVXms51yiQz1Xzmorbd5v4x_tgytsxN61febDSPecmnguyxZvz9o7RDHIS5CAI1CW1jggI6IY" />
-                  <div className="w-6 h-6 rounded-full border border-surface bg-surface-container-high flex items-center justify-center text-[8px] font-bold text-on-surface-variant">+12</div>
-                </div>
-                <span className="text-[10px] text-on-surface-variant font-bold">12 Students applied recently</span>
-              </div>
-            </div>
-          </div>
-          <div className="p-6 rounded-2xl bg-gradient-to-r from-tertiary-container/20 to-transparent border border-tertiary/20 border-l-4 border-l-tertiary flex items-start gap-4 glass-panel card-hover">
-            <span className="material-symbols-outlined text-tertiary text-3xl">celebration</span>
-            <div>
-              <h4 className="font-bold text-on-surface mb-1">Campus Anniversary Gala</h4>
-              <p className="text-sm text-on-surface-variant leading-relaxed">Join us for the 50th-anniversary celebration this Friday. Exclusive merch for the first 500 attendees.</p>
-              <div className="flex items-center gap-4 mt-4">
-                <div className="flex items-center gap-1.5 text-xs text-tertiary font-bold">
-                  <span className="material-symbols-outlined text-sm">favorite</span> 842
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-on-surface-variant font-bold">
-                  <span className="material-symbols-outlined text-sm">share</span> 102
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
 
     </div>

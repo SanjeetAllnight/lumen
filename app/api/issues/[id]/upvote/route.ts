@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { doc, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+export const dynamic = "force-dynamic";
+
 // PATCH /api/issues/[id]/upvote — atomically increment upvotes
 export async function PATCH(
   _req: NextRequest,
@@ -12,8 +14,7 @@ export async function PATCH(
     const docRef = doc(db, "issues", id);
 
     await updateDoc(docRef, {
-      upvotes: increment(1),
-      affectedCount: increment(1),
+      upvotes: increment(1)
     });
 
     return NextResponse.json({ success: true });

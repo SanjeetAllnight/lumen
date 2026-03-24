@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { GlobalProvider } from "@/components/GlobalProvider";
 import FabAndModals from "@/components/FabAndModals";
 import { useAuth } from "@/components/AuthProvider";
+import { ToastProvider } from "@/components/ToastProvider";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -43,20 +44,22 @@ export default function DashboardLayout({
 }>) {
   return (
     <AuthGuard>
-      <GlobalProvider>
-        <div className="min-h-full flex flex-col">
-          <BackgroundEffects />
-          <Navbar />
-          <Sidebar />
-          <div className="flex-1 flex flex-col relative z-20 w-full lg:pl-64">
-            <main className="flex-1 pt-20 pb-8 min-h-screen">
-              {children}
-            </main>
-            <Footer />
+      <ToastProvider>
+        <GlobalProvider>
+          <div className="min-h-full flex flex-col">
+            <BackgroundEffects />
+            <Navbar />
+            <Sidebar />
+            <div className="flex-1 flex flex-col relative z-20 w-full lg:pl-64">
+              <main className="flex-1 pt-20 pb-8 min-h-screen">
+                {children}
+              </main>
+              <Footer />
+            </div>
           </div>
-        </div>
-        <FabAndModals />
-      </GlobalProvider>
+          <FabAndModals />
+        </GlobalProvider>
+      </ToastProvider>
     </AuthGuard>
   );
 }

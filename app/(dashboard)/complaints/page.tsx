@@ -3,17 +3,32 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGlobal } from '@/components/GlobalProvider';
+import { IssueListSkeleton, EmptyIssues } from '@/components/Skeletons';
 
 export default function ComplaintsPage() {
   const router = useRouter();
-  const { issues, upvoteIssue } = useGlobal();
+  const { issues, upvoteIssue, isLoading } = useGlobal();
 
-  const issue1 = issues.find(i => i.id === "network-sector-4");
-  const issue2 = issues.find(i => i.id === "library-hvac");
-  const issue3 = issues.find(i => i.id === "water-cooler");
-  const issue4 = issues.find(i => i.id === "gym-glass");
-  
+  const issue1 = issues.find(i => i.id === "network-sector-4") || issues[3];
+  const issue2 = issues.find(i => i.id === "library-hvac") || issues[4];
+  const issue3 = issues.find(i => i.id === "water-cooler") || issues[5];
+  const issue4 = issues.find(i => i.id === "gym-glass") || issues[6];
+
   const newIssues = issues.filter(i => i.isNew);
+
+  if (isLoading) {
+    return (
+      <div className="px-8 pb-12 w-full">
+        <div className="flex justify-between items-end mb-10">
+          <div>
+            <h2 className="text-4xl font-headline font-bold text-on-surface mb-2">Campus Grievances</h2>
+            <p className="text-on-surface-variant font-medium">Real-time status of reported issues across the ecosystem.</p>
+          </div>
+        </div>
+        <IssueListSkeleton count={5} />
+      </div>
+    );
+  }
 
   return (
     <div className="px-8 pb-12 w-full">
@@ -89,9 +104,9 @@ export default function ComplaintsPage() {
               <div className="flex items-center gap-6">
                 {/* Reactions */}
                 <div className="flex gap-4 bg-surface-container-lowest/80 p-3 rounded-2xl border border-outline-variant/20 shadow-inner">
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Anger">😡</button>
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Urgent">⚠️</button>
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Support">👍</button>
+                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Anger">!</button>
+                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Urgent">!!</button>
+                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Support">+</button>
                 </div>
                 {/* Avatars */}
                 <div className="flex flex-col items-end gap-2">
@@ -162,8 +177,8 @@ export default function ComplaintsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Frustrated">😡</button>
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Warning">⚠️</button>
+                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Frustrated">!</button>
+                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Warning">!!</button>
                   </div>
                   <div className="flex -space-x-2">
                     <div className="w-6 h-6 rounded-full border border-surface bg-slate-400"></div>
@@ -200,7 +215,7 @@ export default function ComplaintsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Good Luck">👍</button>
+                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Good Luck">+</button>
                   </div>
                   <div className="flex -space-x-2">
                     <div className="w-6 h-6 rounded-full border border-surface bg-slate-600"></div>
@@ -236,7 +251,7 @@ export default function ComplaintsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Hazardous">⚠️</button>
+                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Hazardous">!!</button>
                   </div>
                   <div className="flex -space-x-2">
                     <div className="w-6 h-6 rounded-full border border-surface bg-slate-300"></div>

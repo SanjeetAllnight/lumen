@@ -33,7 +33,7 @@ export default function ActivityStreamPage() {
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-headline font-bold text-primary">
-                      ⚠️ Multiple reports incoming: Block A
+                      Multiple reports incoming: Block A
                     </h3>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0"></span>
                   </div>
@@ -66,7 +66,7 @@ export default function ActivityStreamPage() {
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-headline font-bold text-error">
-                      🚨 Network Drop: Critical Node 7
+                      Network Drop: Critical Node 7
                     </h3>
                     <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse shrink-0"></span>
                   </div>
@@ -98,7 +98,7 @@ export default function ActivityStreamPage() {
               <div className="flex-1">
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="text-lg font-headline font-bold text-tertiary">
-                    ⚡ Spike detected: East Plaza density
+                    Spike detected: East Plaza density
                   </h3>
                   <span className="text-[10px] text-slate-500 font-mono shrink-0">2m AGO</span>
                 </div>
@@ -123,7 +123,7 @@ export default function ActivityStreamPage() {
               </div>
               <div className="flex-1">
                 <div className="flex justify-between items-start mb-1">
-                  <h3 className="text-lg font-headline font-bold text-secondary">✅ Gate 4 is back in action</h3>
+                  <h3 className="text-lg font-headline font-bold text-secondary">Gate 4 is back in action</h3>
                   <span className="text-[10px] text-slate-500 font-mono shrink-0">15m AGO</span>
                 </div>
                 <p className="text-sm text-on-surface-variant leading-relaxed mb-2 max-w-xl">Mechanical sensor recalibrated. Vehicle access is back to normal.</p>
