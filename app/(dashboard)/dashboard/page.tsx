@@ -7,11 +7,14 @@ import { HeroIssueSkeleton, IssueListSkeleton, EmptyIssues } from '@/components/
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { issues, upvoteIssue, isLoading } = useGlobal();
+  const { issues, events, upvoteIssue, isLoading } = useGlobal();
 
-  const issue1 = issues.find(i => i.id === "north-lib") || issues[0];
-  const issue2 = issues.find(i => i.id === "maker-space") || issues[1];
-  const issue3 = issues.find(i => i.id === "main-gate") || issues[2];
+  // issues from api are already sorted by upvotes, but just in case:
+  const sortedIssues = [...issues].sort((a, b) => b.upvotes - a.upvotes);
+  
+  const issue1 = sortedIssues[0];
+  const issue2 = sortedIssues[1];
+  const issue3 = sortedIssues[2];
 
   if (isLoading) {
     return (
@@ -37,30 +40,32 @@ export default function DashboardPage() {
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-error/10 blur-[100px] rounded-full group-hover:bg-error/20 transition-colors"></div>
             <div className="relative z-10 flex-1 space-y-6">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="px-4 py-1.5 rounded-full bg-error/20 text-error border border-error/30 text-[10px] font-bold uppercase tracking-widest">Facility Crisis</span>
-                <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">Main Campus</span>
+                <span className="px-4 py-1.5 rounded-full bg-error/20 text-error border border-error/30 text-[10px] font-bold uppercase tracking-widest">{issue1?.category || 'General'}</span>
+                <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">{issue1?.location || 'Campus'}</span>
               </div>
               <h2 className="text-4xl md:text-6xl font-headline font-bold text-on-surface leading-tight tracking-tight">
-                North Library Air <br className="hidden md:block"/><span className="text-error">Conditioning Outage</span>
+                {issue1?.title || 'No active issues'}
               </h2>
               <p className="text-on-surface-variant max-w-2xl text-lg md:text-xl font-body leading-relaxed">
-                <span className="text-primary/80 font-semibold">Summary from multiple reports:</span> Levels 3, 4, and 5 are currently uninhabitable. Student medical reports increasing. Infrastructure team arrival estimated in 45 minutes.
+                {issue1?.aiSummary || issue1?.description || 'All systems are operating normally.'}
               </p>
               <div className="flex flex-wrap items-center gap-8 pt-4">
-                <button onClick={() => router.push('/issue/north-lib')} className="px-6 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors">
+                <button onClick={() => issue1 && router.push(`/issue/${issue1.id}`)} disabled={!issue1} className="px-6 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors disabled:opacity-50">
                   View Details &rarr;
                 </button>
               </div>
             </div>
             <div className="relative z-10 flex flex-col items-center gap-4 min-w-[240px]">
               <div className="bg-surface-container-high/50 p-8 pt-10 pb-10 rounded-3xl border border-white/5 text-center w-full">
-                <div className="text-7xl font-headline font-black text-on-surface mb-2 tracking-tighter">{issue1?.upvotes}</div>
+                <div className="text-7xl font-headline font-black text-on-surface mb-2 tracking-tighter">{issue1?.upvotes || 0}</div>
                 <div className="text-on-surface-variant text-sm font-bold uppercase tracking-[0.2em]">Upvotes</div>
               </div>
-              <button onClick={() => upvoteIssue(issue1?.id || "north-lib")} className="w-full py-6 bg-error text-white rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-error/40 hover:scale-[1.04] active:scale-90 transition-all duration-150 flex items-center justify-center gap-3 text-lg glow-support select-none">
-                <span className="material-symbols-outlined fill-1">thumb_up</span>
-                Support Issue
-              </button>
+              {issue1 && (
+                <button onClick={() => upvoteIssue(issue1?.id)} className="w-full py-6 bg-error text-white rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-error/40 hover:scale-[1.04] active:scale-90 transition-all duration-150 flex items-center justify-center gap-3 text-lg glow-support select-none">
+                  <span className="material-symbols-outlined fill-1">thumb_up</span>
+                  Support Issue
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -121,20 +126,20 @@ export default function DashboardPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Issue Card 1 */}
-          <div onClick={() => router.push('/issue/maker-space')} className="md:col-span-2 group card-hover glass-panel rounded-[2rem] p-8 border border-white/5 hover:border-primary/40 transition-all duration-500 flex flex-col justify-between min-h-[420px] relative overflow-hidden cursor-pointer">
+          <div onClick={() => issue2 && router.push(`/issue/${issue2.id}`)} className="md:col-span-2 group card-hover glass-panel rounded-[2rem] p-8 border border-white/5 hover:border-primary/40 transition-all duration-500 flex flex-col justify-between min-h-[420px] relative overflow-hidden cursor-pointer">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-primary/10 transition-colors"></div>
             <div className="relative z-10 flex justify-between items-start">
               <div className="flex gap-3">
                 <span className="px-4 py-1.5 rounded-full bg-secondary-container/20 text-secondary-fixed border border-secondary/20 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                  High Participation
+                  Trending
                 </span>
-                <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">Sustainability</span>
+                <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">{issue2?.category || 'Discussion'}</span>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5 text-primary">
                   <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
-                  <span className="font-headline font-bold">{issue2?.upvotes}</span>
+                  <span className="font-headline font-bold">{issue2?.upvotes || 0}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-on-surface-variant">
                   <span className="material-symbols-outlined text-xl">forum</span>
@@ -143,9 +148,9 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="relative z-10 space-y-4 my-8">
-              <h3 className="text-3xl md:text-4xl font-headline font-bold text-on-surface leading-tight">Petition for 24/7 Access <br/>to the Maker Space</h3>
+              <h3 className="text-3xl md:text-4xl font-headline font-bold text-on-surface leading-tight">{issue2?.title || 'Awaiting community issues'}</h3>
               <p className="text-on-surface-variant max-w-lg font-body text-lg italic">
-                <span className="text-primary-fixed-dim/80 font-bold not-italic">Summary from multiple reports:</span> Engineering students are requesting extended hours for thesis projects. Current 9 PM closure is hindering production cycles.
+                {issue2?.aiSummary || issue2?.description || 'No trending issues to display right now.'}
               </p>
             </div>
             <div className="relative z-10 flex items-center justify-between pt-6 border-t border-white/5">
@@ -158,37 +163,39 @@ export default function DashboardPage() {
                 <span className="text-xs text-on-surface-variant font-medium">Joined by the Engineering Soc</span>
               </div>
               <div className="flex gap-4 items-center">
-                <div className="tooltip" data-tooltip="Increase visibility of this issue">
-                  <button onClick={(e) => { e.stopPropagation(); upvoteIssue("maker-space"); }} className="flex items-center gap-3 px-8 py-3 rounded-2xl bg-primary text-on-primary font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-primary/30 glow-support">
-                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-                    <span>Support</span>
-                  </button>
-                </div>
+                {issue2 && (
+                  <div className="tooltip" data-tooltip="Increase visibility of this issue">
+                    <button onClick={(e) => { e.stopPropagation(); upvoteIssue(issue2.id); }} className="flex items-center gap-3 px-8 py-3 rounded-2xl bg-primary text-on-primary font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-primary/30 glow-support">
+                      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
+                      <span>Support</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
           {/* Issue Card 2 */}
-          <div onClick={() => router.push('/issue/main-gate')} className="group card-hover glass-panel rounded-[2rem] p-8 border border-white/5 hover:border-secondary/40 transition-all duration-500 flex flex-col justify-between min-h-[420px] cursor-pointer">
+          <div onClick={() => issue3 && router.push(`/issue/${issue3.id}`)} className="group card-hover glass-panel rounded-[2rem] p-8 border border-white/5 hover:border-secondary/40 transition-all duration-500 flex flex-col justify-between min-h-[420px] cursor-pointer">
             <div className="space-y-6">
               <div className="flex justify-between items-start">
                 <span className="px-4 py-1.5 rounded-full bg-secondary-container/20 text-secondary-fixed border border-secondary/20 text-[10px] font-bold uppercase tracking-widest inline-block">
-                  Resolved
+                  {issue3?.status === 'resolved' ? 'Resolved' : 'Active'}
                 </span>
                 <div className="flex items-center gap-1.5 text-secondary">
-                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <span className="font-headline font-bold">100%</span>
+                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                  <span className="font-headline font-bold">{issue3?.upvotes || 0}</span>
                 </div>
               </div>
-              <h3 className="text-2xl font-headline font-bold text-on-surface leading-snug">Main Gate WiFi Node Connectivity</h3>
+              <h3 className="text-2xl font-headline font-bold text-on-surface leading-snug">{issue3?.title || 'No issues to display yet'}</h3>
               <div className="flex items-center gap-2 text-secondary-fixed text-sm font-medium">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                Fixed 14m ago
+                <span className="material-symbols-outlined text-sm">schedule</span>
+                {issue3 ? 'Updated recently' : 'Check back later'}
               </div>
             </div>
             <div className="mt-8 space-y-6">
               <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
-                <span>Signal Strength</span>
-                <span className="text-secondary">98% Stable</span>
+                <span>Location</span>
+                <span className="text-secondary">{issue3?.location || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -250,49 +257,28 @@ export default function DashboardPage() {
             <h2 className="text-3xl font-headline font-bold text-on-surface">Recommended</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Event Item 1 */}
-            <div className="glass-panel p-5 rounded-3xl border border-white/5 hover:bg-surface-container-highest/60 transition-all flex gap-4 group cursor-pointer card-hover">
-              <div className="flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden relative">
-                <img className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="event thumbnail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6suBahfjKWQPfLLNgVg__EnrwT-ywZl1aSw75ouYzKqe1bZrTgffe8Z-MIo2ibUkAuuguqE1syw4QOEoQertGYnE1dQZzwaZjD1qL20kXxQ1e9XX7d_vldlgoBcukVT_i7samgcxXcfQqHMoziSniYejSlbNsKzKtJsXz1oK5Wnief2C63biEQScBNoBvumzDoXtjqlUA8YhgZgOKlQeLJslF8F4F8PSdtDHgw4qt2x_4HkxQ_A8OM7ucm0GZXgvPJ-xkGoZNlCc" />
-                <div className="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
-              </div>
-              <div className="flex flex-col justify-center flex-1">
-                <h4 className="font-headline font-bold text-lg leading-tight mb-1 group-hover:text-primary transition-colors">AI Ethics Symposium</h4>
-                <div className="flex items-center gap-3 text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
-                  <span className="flex items-center gap-1 text-primary"><span className="material-symbols-outlined text-xs">calendar_today</span> Today</span>
-                  <span className="flex items-center gap-1"><span className="material-symbols-outlined text-xs">location_on</span> Hall 4B</span>
+            {events.slice(0, 2).map((event, idx) => (
+              <div key={event.id} className="glass-panel p-5 rounded-3xl border border-white/5 hover:bg-surface-container-highest/60 transition-all flex gap-4 group cursor-pointer card-hover">
+                <div className="flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden relative">
+                  <div className={`absolute inset-0 block bg-gradient-to-br ${idx === 0 ? 'from-primary/40 to-primary/10' : 'from-secondary/40 to-secondary/10'}`}></div>
                 </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    <img className="w-6 h-6 rounded-full border border-surface-container-highest object-cover" alt="avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsb7xA4zlIyEZvspyRU4q9n13AtYY5k7XrhxDzXxYDqNlXLntrk9T5KEqkfjB9j249C8MHDSDv37SNfIVETA3mEx82hcb9qUyvXdLbw4IogqzZTF4Eb2aXWmrek3V0YXl4_MiJ_K-P3jVHCDfGZEeKyPC-avsdtwAOcyUlvI5RfHxramFYo7jyOsyHbVLPrHFwrQuiQZ5IOOMKRn8u6-gXH9_4WBkHce9d1391rBWsK1Ti4bfa7QFLpaizhtJ2KasiJpQUY08G_yY" />
-                    <div className="w-6 h-6 rounded-full border border-surface-container-highest bg-surface-container-high flex items-center justify-center text-[8px] font-bold text-on-surface-variant">+3</div>
+                <div className="flex flex-col justify-center flex-1">
+                  <h4 className={`font-headline font-bold text-lg leading-tight mb-1 transition-colors ${idx === 0 ? 'group-hover:text-primary' : 'group-hover:text-secondary'}`}>{event.title}</h4>
+                  <div className="flex items-center gap-3 text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
+                    <span className={`flex items-center gap-1 ${idx === 0 ? 'text-primary' : 'text-secondary'}`}><span className="material-symbols-outlined text-xs">calendar_today</span> {event.date ? new Date(event.date).toLocaleDateString() : 'Upcoming'}</span>
+                    <span className="flex items-center gap-1"><span className="material-symbols-outlined text-xs">location_on</span> {event.location}</span>
                   </div>
-                  <span className="text-[9px] font-bold text-tertiary uppercase tracking-widest">Recommended for you</span>
-                </div>
-              </div>
-            </div>
-            {/* Event Item 2 */}
-            <div className="glass-panel p-5 rounded-3xl border border-white/5 hover:bg-surface-container-highest/60 transition-all flex gap-4 group cursor-pointer card-hover">
-              <div className="flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden relative">
-                <img className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="event thumbnail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSQWW7LvlwTPusgmbOa-FsjaaTdcN8vwMlQUyB0LmzqMz0YZZ_77DPFN56knxPUqJrBnUtOGUvXVk4NUPaMicnZYzzwrAd-N64MWbQ9m1pS3Uwox6d1tmnXdT6o4JL324KrhuL87zVRiY5ac0i0CkrnolIphptdye5gfx4a9K8nkoegOcCuqKbadmQ4WgDl1dAaWmElnF2rVsBneUVyvt95lqM02EfIvUBYjx-UZvpvMy15fMdsPlMRK_EhJBoxLQ5bgDdTJc_3bA" />
-                <div className="absolute inset-0 bg-secondary/20 mix-blend-overlay"></div>
-              </div>
-              <div className="flex flex-col justify-center flex-1">
-                <h4 className="font-headline font-bold text-lg leading-tight mb-1 group-hover:text-secondary transition-colors">Sunset Acoustics</h4>
-                <div className="flex items-center gap-3 text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
-                  <span className="flex items-center gap-1 text-secondary"><span className="material-symbols-outlined text-xs">schedule</span> 20:30</span>
-                  <span className="flex items-center gap-1"><span className="material-symbols-outlined text-xs">location_on</span> The Lawn</span>
-                </div>
-                <div className="mt-3 flex items-center gap-4">
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-xs">group</span> 84 Going
-                  </div>
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-xs">thumb_up</span> 312
+                  <div className="mt-3 flex items-center gap-4">
+                    <div className="flex items-center gap-1 text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">
+                      <span className="material-symbols-outlined text-xs">group</span> {event.attendees || 0} Going
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
+            {events.length === 0 && (
+              <p className="text-on-surface-variant">No upcoming events right now.</p>
+            )}
           </div>
         </div>
       </section>
