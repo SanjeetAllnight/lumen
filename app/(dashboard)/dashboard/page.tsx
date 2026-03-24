@@ -1,17 +1,42 @@
 "use client";
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGlobal } from '@/components/GlobalProvider';
-import { HeroIssueSkeleton, IssueListSkeleton, EmptyIssues } from '@/components/Skeletons';
+import { HeroIssueSkeleton, IssueListSkeleton } from '@/components/Skeletons';
+
+function timeAgo(dateString: string | null | undefined): string {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return "";
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+function statusLabel(status: string) {
+  if (status === "resolved") return "Resolved";
+  if (status === "in_progress") return "In Progress";
+  return "Reported";
+}
+
+function statusColor(status: string) {
+  if (status === "resolved") return "text-secondary bg-secondary/10 border-secondary/30";
+  if (status === "in_progress") return "text-primary bg-primary/10 border-primary/30";
+  return "text-error bg-error/10 border-error/30";
+}
+
+function formatEventDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "Date TBD";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "Date TBD";
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { issues, upvoteIssue, isLoading } = useGlobal();
-
-  const issue1 = issues.find(i => i.id === "north-lib") || issues[0];
-  const issue2 = issues.find(i => i.id === "maker-space") || issues[1];
-  const issue3 = issues.find(i => i.id === "main-gate") || issues[2];
+  const { issues, events, upvoteIssue, isLoading } = useGlobal();
 
   if (isLoading) {
     return (
@@ -22,283 +47,260 @@ export default function DashboardPage() {
     );
   }
 
+  // Sort issues by upvotes for display
+  const sortedByUpvotes = [...issues].sort((a, b) => b.upvotes - a.upvotes);
+  const topIssue = sortedByUpvotes[0];
+  const trendingIssues = sortedByUpvotes.slice(1, 4); // next 3 for trending grid
+
+  // Upcoming events — take first 4
+  const upcomingEvents = events.slice(0, 4);
+
   return (
     <div className="max-w-[1400px] mx-auto p-6 md:p-10 space-y-12">
-      {/* Top Campus Issue Section */}
+
+      {/* ── Top Campus Issue ── */}
       <section className="space-y-4">
         <div className="flex items-center justify-between px-2">
           <span className="text-error font-black tracking-[0.2em] text-[10px] uppercase flex items-center gap-2 bg-error/10 px-3 py-1 rounded-full border border-error/20">
-            High Priority Issue
+            Highest Impact Issue
           </span>
-          <span className="text-on-surface-variant text-xs">Updated 2m ago</span>
+          {topIssue && (
+            <span className="text-on-surface-variant text-xs">{timeAgo(topIssue.createdAt)}</span>
+          )}
         </div>
-        <div className="group card-hover glass-panel rounded-[2.5rem] p-1 md:p-1.5 border border-error/20 bg-gradient-to-br from-error/10 via-transparent to-transparent glow-error transition-all duration-500">
-          <div className="bg-surface-container-lowest/80 backdrop-blur-md rounded-[2.25rem] p-8 md:p-12 flex flex-col lg:flex-row gap-10 items-center justify-between overflow-hidden relative">
-            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-error/10 blur-[100px] rounded-full group-hover:bg-error/20 transition-colors"></div>
-            <div className="relative z-10 flex-1 space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="px-4 py-1.5 rounded-full bg-error/20 text-error border border-error/30 text-[10px] font-bold uppercase tracking-widest">Facility Crisis</span>
-                <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">Main Campus</span>
+
+        {!topIssue ? (
+          <div className="glass-panel rounded-[2.5rem] p-10 border border-white/5 flex flex-col items-center justify-center text-center min-h-[200px]">
+            <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-3">inbox</span>
+            <p className="text-on-surface-variant font-semibold">No issues reported yet.</p>
+            <p className="text-on-surface-variant/60 text-sm mt-1">Be the first to report a campus issue.</p>
+            <button
+              onClick={() => document.dispatchEvent(new Event("openReportModal"))}
+              className="mt-6 px-6 py-2.5 bg-primary text-on-primary rounded-full font-bold text-sm hover:brightness-110 transition-all"
+            >
+              Report an Issue
+            </button>
+          </div>
+        ) : (
+          <div className="group card-hover glass-panel rounded-[2.5rem] p-1 md:p-1.5 border border-error/20 bg-gradient-to-br from-error/10 via-transparent to-transparent glow-error transition-all duration-500">
+            <div className="bg-surface-container-lowest/80 backdrop-blur-md rounded-[2.25rem] p-8 md:p-12 flex flex-col lg:flex-row gap-10 items-center justify-between overflow-hidden relative">
+              <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-error/10 blur-[100px] rounded-full group-hover:bg-error/20 transition-colors" />
+              <div className="relative z-10 flex-1 space-y-6">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusColor(topIssue.status)}`}>
+                    {statusLabel(topIssue.status)}
+                  </span>
+                  <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">
+                    {topIssue.category}
+                  </span>
+                  <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">
+                    {topIssue.location}
+                  </span>
+                </div>
+                <h2 className="text-3xl md:text-5xl font-headline font-bold text-on-surface leading-tight tracking-tight">
+                  {topIssue.title}
+                </h2>
+                <p className="text-on-surface-variant max-w-2xl text-lg font-body leading-relaxed">
+                  {topIssue.aiSummary || topIssue.description}
+                </p>
+                <div className="flex flex-wrap items-center gap-4 pt-2">
+                  <button
+                    onClick={() => router.push(`/issue/${topIssue.id}`)}
+                    className="px-6 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors"
+                  >
+                    View Details →
+                  </button>
+                  <span className="text-xs text-on-surface-variant">
+                    Reported by <span className="text-on-surface font-semibold">{topIssue.authorName || "Student"}</span>
+                  </span>
+                </div>
               </div>
-              <h2 className="text-4xl md:text-6xl font-headline font-bold text-on-surface leading-tight tracking-tight">
-                North Library Air <br className="hidden md:block"/><span className="text-error">Conditioning Outage</span>
-              </h2>
-              <p className="text-on-surface-variant max-w-2xl text-lg md:text-xl font-body leading-relaxed">
-                <span className="text-primary/80 font-semibold">Summary from multiple reports:</span> Levels 3, 4, and 5 are currently uninhabitable. Student medical reports increasing. Infrastructure team arrival estimated in 45 minutes.
-              </p>
-              <div className="flex flex-wrap items-center gap-8 pt-4">
-                <button onClick={() => router.push('/issue/north-lib')} className="px-6 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors">
-                  View Details &rarr;
+              <div className="relative z-10 flex flex-col items-center gap-4 min-w-[220px]">
+                <div className="bg-surface-container-high/50 p-8 rounded-3xl border border-white/5 text-center w-full">
+                  <div className="text-6xl font-headline font-black text-on-surface mb-2 tracking-tighter">{topIssue.upvotes}</div>
+                  <div className="text-on-surface-variant text-sm font-bold uppercase tracking-[0.2em]">Upvotes</div>
+                </div>
+                <button
+                  onClick={() => upvoteIssue(topIssue.id)}
+                  className="w-full py-5 bg-error text-white rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-error/40 hover:scale-[1.04] active:scale-90 transition-all duration-150 flex items-center justify-center gap-3 text-base"
+                >
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
+                  Support Issue
                 </button>
               </div>
             </div>
-            <div className="relative z-10 flex flex-col items-center gap-4 min-w-[240px]">
-              <div className="bg-surface-container-high/50 p-8 pt-10 pb-10 rounded-3xl border border-white/5 text-center w-full">
-                <div className="text-7xl font-headline font-black text-on-surface mb-2 tracking-tighter">{issue1?.upvotes}</div>
-                <div className="text-on-surface-variant text-sm font-bold uppercase tracking-[0.2em]">Upvotes</div>
-              </div>
-              <button onClick={() => upvoteIssue(issue1?.id || "north-lib")} className="w-full py-6 bg-error text-white rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-error/40 hover:scale-[1.04] active:scale-90 transition-all duration-150 flex items-center justify-center gap-3 text-lg glow-support select-none">
-                <span className="material-symbols-outlined fill-1">thumb_up</span>
-                Support Issue
-              </button>
-            </div>
           </div>
-        </div>
+        )}
       </section>
 
-      {/* Hero Header Section */}
-      <section className="relative overflow-hidden rounded-[2.5rem] p-12 bg-surface-container-low border border-white/5 glass-panel card-hover">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full"></div>
-        <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+      {/* ── Campus Heartbeat Hero ── */}
+      <section className="relative overflow-hidden rounded-[2.5rem] p-10 md:p-12 bg-surface-container-low border border-white/5 glass-panel">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full" />
+        <div className="relative z-10 grid lg:grid-cols-2 gap-10 items-center">
           <div className="space-y-6">
-            <h1 className="text-5xl md:text-7xl font-headline font-bold text-on-surface leading-none tracking-tighter">
-              The Campus <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-tertiary">Heartbeat.</span>
+            <h1 className="text-5xl md:text-6xl font-headline font-bold text-on-surface leading-none tracking-tighter">
+              The Campus <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-tertiary">Heartbeat.</span>
             </h1>
             <p className="text-on-surface-variant max-w-md text-lg leading-relaxed font-body">
-              Real-time student insights, trending campus issues, and critical updates mapped in 3D for the modern observatory.
+              Real-time student insights and campus issue tracking — powered by your community.
             </p>
-            <div className="flex gap-4">
-              <button onClick={() => router.push('/map')} className="px-8 py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-transform">
+            <div className="flex gap-4 flex-wrap">
+              <button
+                onClick={() => router.push("/map")}
+                className="px-8 py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-transform"
+              >
                 View Heatmap
               </button>
-              <button onClick={() => router.push('/complaints')} className="px-8 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors">
+              <button
+                onClick={() => router.push("/complaints")}
+                className="px-8 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors"
+              >
                 Active Reports
               </button>
             </div>
           </div>
-          <div className="hidden lg:block">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="glass-panel p-6 rounded-3xl border border-white/5 glow-purple bg-surface-container-highest/30">
-                <span className="material-symbols-outlined text-primary text-4xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
-                <h4 className="text-3xl font-headline font-bold">14.2k</h4>
-                <p className="text-on-surface-variant text-sm">Active Students</p>
-              </div>
-              <div className="glass-panel p-6 rounded-3xl border border-white/5">
-                <span className="material-symbols-outlined text-tertiary text-4xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>stadium</span>
-                <h4 className="text-3xl font-headline font-bold">12</h4>
-                <p className="text-on-surface-variant text-sm">Upcoming Events</p>
-              </div>
-              <div className="glass-panel p-6 rounded-3xl border border-white/5 translate-y-8 glow-purple">
-                <span className="material-symbols-outlined text-error text-4xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
-                <h4 className="text-3xl font-headline font-bold">03</h4>
-                <p className="text-on-surface-variant text-sm">Active Alerts</p>
-              </div>
+
+          {/* Live stats — all real */}
+          <div className="hidden lg:grid grid-cols-2 gap-4">
+            <div className="glass-panel p-6 rounded-3xl border border-white/5 glow-purple bg-surface-container-highest/30">
+              <span className="material-symbols-outlined text-error text-3xl mb-3 block" style={{ fontVariationSettings: "'FILL' 1" }}>report_problem</span>
+              <h4 className="text-4xl font-headline font-bold">{issues.length}</h4>
+              <p className="text-on-surface-variant text-sm mt-1">Active Issues</p>
+            </div>
+            <div className="glass-panel p-6 rounded-3xl border border-white/5">
+              <span className="material-symbols-outlined text-secondary text-3xl mb-3 block" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+              <h4 className="text-4xl font-headline font-bold">{issues.filter(i => i.status === "resolved").length}</h4>
+              <p className="text-on-surface-variant text-sm mt-1">Resolved</p>
+            </div>
+            <div className="glass-panel p-6 rounded-3xl border border-white/5 translate-y-6">
+              <span className="material-symbols-outlined text-tertiary text-3xl mb-3 block" style={{ fontVariationSettings: "'FILL' 1" }}>stadium</span>
+              <h4 className="text-4xl font-headline font-bold">{events.length}</h4>
+              <p className="text-on-surface-variant text-sm mt-1">Upcoming Events</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Trending Issues Bento Grid */}
-      <section className="space-y-8">
+      {/* ── Trending Issues ── */}
+      <section className="space-y-6">
         <div className="flex items-end justify-between px-2">
           <div className="space-y-1">
             <span className="text-tertiary font-bold tracking-[0.2em] text-[10px] uppercase">Real-Time Hub</span>
-            <h2 className="text-4xl font-headline font-bold text-on-surface">Trending Issues</h2>
+            <h2 className="text-3xl font-headline font-bold text-on-surface">Trending Issues</h2>
           </div>
-          <a className="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium flex items-center gap-2" href="#">
-            View all trends <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </a>
+          <button
+            onClick={() => router.push("/complaints")}
+            className="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium flex items-center gap-2"
+          >
+            View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Issue Card 1 */}
-          <div onClick={() => router.push('/issue/maker-space')} className="md:col-span-2 group card-hover glass-panel rounded-[2rem] p-8 border border-white/5 hover:border-primary/40 transition-all duration-500 flex flex-col justify-between min-h-[420px] relative overflow-hidden cursor-pointer">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-primary/10 transition-colors"></div>
-            <div className="relative z-10 flex justify-between items-start">
-              <div className="flex gap-3">
-                <span className="px-4 py-1.5 rounded-full bg-secondary-container/20 text-secondary-fixed border border-secondary/20 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                  High Participation
-                </span>
-                <span className="px-4 py-1.5 rounded-full bg-white/5 text-on-surface-variant border border-white/5 text-[10px] font-bold uppercase tracking-widest">Sustainability</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 text-primary">
-                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
-                  <span className="font-headline font-bold">{issue2?.upvotes}</span>
+
+        {trendingIssues.length === 0 ? (
+          <div className="glass-panel rounded-[2rem] p-10 border border-white/5 flex flex-col items-center justify-center text-center min-h-[160px]">
+            <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-3">trending_up</span>
+            <p className="text-on-surface-variant text-sm">No trending issues yet. Submit a report to get started.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {trendingIssues.map((issue) => (
+              <div
+                key={issue.id}
+                onClick={() => router.push(`/issue/${issue.id}`)}
+                className="group card-hover glass-panel rounded-[2rem] p-6 border border-white/5 hover:border-primary/30 transition-all duration-300 flex flex-col cursor-pointer min-h-[200px]"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
+                    {statusLabel(issue.status)}
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant/50">{timeAgo(issue.createdAt)}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-on-surface-variant">
-                  <span className="material-symbols-outlined text-xl">forum</span>
-                  <span className="font-headline font-bold">{issue2?.comments?.length || 0}</span>
-                </div>
-              </div>
-            </div>
-            <div className="relative z-10 space-y-4 my-8">
-              <h3 className="text-3xl md:text-4xl font-headline font-bold text-on-surface leading-tight">Petition for 24/7 Access <br/>to the Maker Space</h3>
-              <p className="text-on-surface-variant max-w-lg font-body text-lg italic">
-                <span className="text-primary-fixed-dim/80 font-bold not-italic">Summary from multiple reports:</span> Engineering students are requesting extended hours for thesis projects. Current 9 PM closure is hindering production cycles.
-              </p>
-            </div>
-            <div className="relative z-10 flex items-center justify-between pt-6 border-t border-white/5">
-              <div className="flex items-center gap-4">
-                <div className="flex -space-x-3">
-                  <img className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="student profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBM4LYXbH5yW4Q2Bo894pz16azlUPsZpeaHbqAba7RPTQBrp5plTCHD1aI1nRzuxxro7RERxmb8NoE5WWo6vF30SWd0LcUAz0Qr6b1ijk2wSgz6QgoJVoDHCsjixeBlzUJH3QLm8wPAUdTzHyTXrsFDhzEPBUCOmKXX1pSN14GYwrdL8hQor4bnnqs-_6C5-a1_sGSVXms51yiQz1Xzmorbd5v4x_tgytsxN61febDSPecmnguyxZvz9o7RDHIS5CAI1CW1jggI6IY" />
-                  <img className="w-10 h-10 rounded-full border-2 border-surface object-cover" alt="student profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5-pTrqP3vX8Pchnf0pRBGLvGyT_MvuoBqiLRxnXMtOtE0qVFKxap4VL_LFqwHcUuFsQJlaANK_TvMwqXeSXTHdOcpscJuwoHv1PRhuuKYlD2YrB5hV1j0geIyMqrSCeW59WyRg-fzdFKkjThhcGqwRh29HhG0kCpogSU98tLuhVGdLdFDTjvMB90c4vBE45iT9L_7O86jeSp5Lw9QYwn_8ZU4hTK2VlNxbCg0wDqGcQhNuxsxCOZ1ik8mrNU1fc3427eb7WL-mh4" />
-                  <div className="w-10 h-10 rounded-full border-2 border-surface bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">+1.2k</div>
-                </div>
-                <span className="text-xs text-on-surface-variant font-medium">Joined by the Engineering Soc</span>
-              </div>
-              <div className="flex gap-4 items-center">
-                <div className="tooltip" data-tooltip="Increase visibility of this issue">
-                  <button onClick={(e) => { e.stopPropagation(); upvoteIssue("maker-space"); }} className="flex items-center gap-3 px-8 py-3 rounded-2xl bg-primary text-on-primary font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-primary/30 glow-support">
-                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-                    <span>Support</span>
+                <h3 className="text-lg font-headline font-bold text-on-surface leading-snug mb-2 group-hover:text-primary transition-colors">
+                  {issue.title}
+                </h3>
+                <p className="text-sm text-on-surface-variant line-clamp-2 flex-1">
+                  {issue.aiSummary || issue.description}
+                </p>
+                <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); upvoteIssue(issue.id); }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
+                    <span className="text-sm font-bold">{issue.upvotes}</span>
                   </button>
+                  <span className="text-[11px] text-on-surface-variant font-medium flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">location_on</span>
+                    {issue.location}
+                  </span>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-          {/* Issue Card 2 */}
-          <div onClick={() => router.push('/issue/main-gate')} className="group card-hover glass-panel rounded-[2rem] p-8 border border-white/5 hover:border-secondary/40 transition-all duration-500 flex flex-col justify-between min-h-[420px] cursor-pointer">
-            <div className="space-y-6">
-              <div className="flex justify-between items-start">
-                <span className="px-4 py-1.5 rounded-full bg-secondary-container/20 text-secondary-fixed border border-secondary/20 text-[10px] font-bold uppercase tracking-widest inline-block">
-                  Resolved
-                </span>
-                <div className="flex items-center gap-1.5 text-secondary">
-                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <span className="font-headline font-bold">100%</span>
-                </div>
-              </div>
-              <h3 className="text-2xl font-headline font-bold text-on-surface leading-snug">Main Gate WiFi Node Connectivity</h3>
-              <div className="flex items-center gap-2 text-secondary-fixed text-sm font-medium">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                Fixed 14m ago
-              </div>
-            </div>
-            <div className="mt-8 space-y-6">
-              <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
-                <span>Signal Strength</span>
-                <span className="text-secondary">98% Stable</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </section>
 
-      {/* Activity Near You (Map Snip) */}
-      <section className="space-y-16">
-        <div className="space-y-8">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-3xl font-headline font-bold text-on-surface">Activity Near You</h2>
-            <div className="flex items-center gap-2 text-on-surface-variant text-sm bg-surface-container-low px-4 py-2 rounded-full border border-white/5 glass-panel">
-              <span className="material-symbols-outlined text-sm text-secondary">location_on</span>
-              Central Hub Area
-            </div>
+      {/* ── Recommended (Upcoming Events) ── */}
+      <section className="space-y-6 border-t border-white/5 pt-10">
+        <div className="flex items-end justify-between px-2">
+          <div className="space-y-1">
+            <span className="text-secondary font-bold tracking-[0.2em] text-[10px] uppercase">What's On</span>
+            <h2 className="text-3xl font-headline font-bold text-on-surface">Upcoming Events</h2>
           </div>
-          <div className="relative h-[450px] rounded-[2.5rem] overflow-hidden border border-white/5 bg-slate-900 shadow-2xl glass-panel card-hover">
-            <div className="absolute inset-0 opacity-40 mix-blend-luminosity">
-              <img className="w-full h-full object-cover" alt="campus map" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSGn12LIFdrT4nLbtOyueg9tG1u06Oak-XyzOCcK2zccmZvbJgbF3ftGWsoga4tIqeLw59cc4dG2cPjYrbp01L-EPofFXBLggnBsLsT3m4ljlSiQ1uWYcG2Exg-yFrurEXj_xuBaCKBoLKTWn-DhLxCuo9HbPWlTrnzmJzOIOJw1A1Wsdy1-V6452NI1XtjAvb0gETjoVVTC-Dqpn_A2TtNktjTy3_ojTLOg_g3QyLQrX50Vr4Almc3yA9rqhG-jgQgMOCh_HAuGI" />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-80"></div>
-            {/* Pulse Points */}
-            <div className="absolute top-1/4 left-1/3 group">
-              <div className="w-16 h-16 bg-primary/20 rounded-full animate-pulse absolute -inset-4"></div>
-              <div className="w-8 h-8 bg-primary rounded-full border-4 border-surface shadow-lg relative flex items-center justify-center">
-                <span className="material-symbols-outlined text-xs text-on-primary">local_cafe</span>
-              </div>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 glass-panel px-4 py-2 rounded-xl text-xs font-bold border border-primary/30 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                High Density: Student Union
-              </div>
-            </div>
-            <div className="absolute bottom-1/3 right-1/4 group">
-              <div className="w-24 h-24 bg-secondary/10 rounded-full animate-pulse absolute -inset-8"></div>
-              <div className="w-8 h-8 bg-secondary rounded-full border-4 border-surface shadow-lg relative flex items-center justify-center">
-                <span className="material-symbols-outlined text-xs text-on-secondary">sports_soccer</span>
-              </div>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 glass-panel px-4 py-2 rounded-xl text-xs font-bold border border-secondary/30 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Intramural Finals Underway
-              </div>
-            </div>
-            {/* Map Legend / Controls */}
-            <div className="absolute bottom-6 right-6 flex flex-col gap-2">
-              <button className="w-12 h-12 glass-panel rounded-full flex items-center justify-center border border-white/10 hover:bg-white/10 transition-colors tooltip" data-tooltip="Zoom In">
-                <span className="material-symbols-outlined">add</span>
-              </button>
-              <button className="w-12 h-12 glass-panel rounded-full flex items-center justify-center border border-white/10 hover:bg-white/10 transition-colors tooltip" data-tooltip="Zoom Out">
-                <span className="material-symbols-outlined">remove</span>
-              </button>
-              <button className="w-12 h-12 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 mt-4 hover:scale-110 transition-transform tooltip" data-tooltip="Recenter Map">
-                <span className="material-symbols-outlined">my_location</span>
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={() => router.push("/events")}
+            className="text-on-surface-variant hover:text-secondary transition-colors text-sm font-medium flex items-center gap-2"
+          >
+            All events <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          </button>
         </div>
 
-        {/* Recommended Events */}
-        <div className="space-y-8">
-          <div className="px-2 border-t border-white/5 pt-12">
-            <h2 className="text-3xl font-headline font-bold text-on-surface">Recommended</h2>
+        {upcomingEvents.length === 0 ? (
+          <div className="glass-panel rounded-[2rem] p-10 border border-white/5 text-center min-h-[120px] flex items-center justify-center">
+            <p className="text-on-surface-variant text-sm">No upcoming events at the moment.</p>
           </div>
+        ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Event Item 1 */}
-            <div className="glass-panel p-5 rounded-3xl border border-white/5 hover:bg-surface-container-highest/60 transition-all flex gap-4 group cursor-pointer card-hover">
-              <div className="flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden relative">
-                <img className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="event thumbnail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6suBahfjKWQPfLLNgVg__EnrwT-ywZl1aSw75ouYzKqe1bZrTgffe8Z-MIo2ibUkAuuguqE1syw4QOEoQertGYnE1dQZzwaZjD1qL20kXxQ1e9XX7d_vldlgoBcukVT_i7samgcxXcfQqHMoziSniYejSlbNsKzKtJsXz1oK5Wnief2C63biEQScBNoBvumzDoXtjqlUA8YhgZgOKlQeLJslF8F4F8PSdtDHgw4qt2x_4HkxQ_A8OM7ucm0GZXgvPJ-xkGoZNlCc" />
-                <div className="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
-              </div>
-              <div className="flex flex-col justify-center flex-1">
-                <h4 className="font-headline font-bold text-lg leading-tight mb-1 group-hover:text-primary transition-colors">AI Ethics Symposium</h4>
-                <div className="flex items-center gap-3 text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
-                  <span className="flex items-center gap-1 text-primary"><span className="material-symbols-outlined text-xs">calendar_today</span> Today</span>
-                  <span className="flex items-center gap-1"><span className="material-symbols-outlined text-xs">location_on</span> Hall 4B</span>
+            {upcomingEvents.map((event) => (
+              <div
+                key={event.id}
+                onClick={() => router.push("/events")}
+                className="glass-panel p-5 rounded-3xl border border-white/5 hover:bg-surface-container-highest/60 hover:border-secondary/20 transition-all flex gap-4 group cursor-pointer"
+              >
+                {/* Icon block replacing fake thumbnail image */}
+                <div className="flex-shrink-0 w-20 h-20 rounded-2xl bg-gradient-to-br from-secondary/20 to-primary/10 border border-white/5 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-3xl text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    {event.category === "Sports" ? "sports_soccer"
+                      : event.category === "Cultural" ? "music_note"
+                      : event.category === "Career" ? "work"
+                      : "school"}
+                  </span>
                 </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    <img className="w-6 h-6 rounded-full border border-surface-container-highest object-cover" alt="avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsb7xA4zlIyEZvspyRU4q9n13AtYY5k7XrhxDzXxYDqNlXLntrk9T5KEqkfjB9j249C8MHDSDv37SNfIVETA3mEx82hcb9qUyvXdLbw4IogqzZTF4Eb2aXWmrek3V0YXl4_MiJ_K-P3jVHCDfGZEeKyPC-avsdtwAOcyUlvI5RfHxramFYo7jyOsyHbVLPrHFwrQuiQZ5IOOMKRn8u6-gXH9_4WBkHce9d1391rBWsK1Ti4bfa7QFLpaizhtJ2KasiJpQUY08G_yY" />
-                    <div className="w-6 h-6 rounded-full border border-surface-container-highest bg-surface-container-high flex items-center justify-center text-[8px] font-bold text-on-surface-variant">+3</div>
+                <div className="flex flex-col justify-center flex-1 min-w-0">
+                  <h4 className="font-headline font-bold text-base leading-tight mb-1 group-hover:text-secondary transition-colors truncate">
+                    {event.title}
+                  </h4>
+                  <div className="flex items-center gap-3 text-on-surface-variant text-[10px] font-bold uppercase tracking-wider flex-wrap">
+                    <span className="flex items-center gap-1 text-secondary">
+                      <span className="material-symbols-outlined text-xs">calendar_today</span>
+                      {formatEventDate(event.date)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">location_on</span>
+                      {event.location}
+                    </span>
                   </div>
-                  <span className="text-[9px] font-bold text-tertiary uppercase tracking-widest">Recommended for you</span>
-                </div>
-              </div>
-            </div>
-            {/* Event Item 2 */}
-            <div className="glass-panel p-5 rounded-3xl border border-white/5 hover:bg-surface-container-highest/60 transition-all flex gap-4 group cursor-pointer card-hover">
-              <div className="flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden relative">
-                <img className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="event thumbnail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSQWW7LvlwTPusgmbOa-FsjaaTdcN8vwMlQUyB0LmzqMz0YZZ_77DPFN56knxPUqJrBnUtOGUvXVk4NUPaMicnZYzzwrAd-N64MWbQ9m1pS3Uwox6d1tmnXdT6o4JL324KrhuL87zVRiY5ac0i0CkrnolIphptdye5gfx4a9K8nkoegOcCuqKbadmQ4WgDl1dAaWmElnF2rVsBneUVyvt95lqM02EfIvUBYjx-UZvpvMy15fMdsPlMRK_EhJBoxLQ5bgDdTJc_3bA" />
-                <div className="absolute inset-0 bg-secondary/20 mix-blend-overlay"></div>
-              </div>
-              <div className="flex flex-col justify-center flex-1">
-                <h4 className="font-headline font-bold text-lg leading-tight mb-1 group-hover:text-secondary transition-colors">Sunset Acoustics</h4>
-                <div className="flex items-center gap-3 text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
-                  <span className="flex items-center gap-1 text-secondary"><span className="material-symbols-outlined text-xs">schedule</span> 20:30</span>
-                  <span className="flex items-center gap-1"><span className="material-symbols-outlined text-xs">location_on</span> The Lawn</span>
-                </div>
-                <div className="mt-3 flex items-center gap-4">
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-xs">group</span> 84 Going
-                  </div>
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-xs">thumb_up</span> 312
+                  <div className="mt-2 flex items-center gap-1 text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
+                    <span className="material-symbols-outlined text-xs">group</span>
+                    {event.attendees.toLocaleString()} expected
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        </div>
+        )}
       </section>
-
-
-
 
     </div>
   );

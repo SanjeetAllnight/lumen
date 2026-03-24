@@ -16,7 +16,6 @@ type Issue = {
   location: string;
   status: string;
   upvotes: number;
-  affectedCount: number;
   severity?: Severity;
   createdAt: string | null;
 };
@@ -52,8 +51,8 @@ function deriveSeverity(issue: Issue): Severity {
   }
   const s = issue.status?.toLowerCase() ?? "";
   if (s === "critical" || s === "urgent") return "critical";
-  if (issue.upvotes >= 50 || issue.affectedCount >= 100) return "critical";
-  if (issue.upvotes >= 20 || issue.affectedCount >= 30) return "high";
+  if (issue.upvotes >= 50) return "critical";
+  if (issue.upvotes >= 20) return "high";
   if (issue.upvotes >= 5) return "medium";
   return "low";
 }
@@ -465,7 +464,7 @@ export default function ActivityStreamPage() {
                     <span className={`text-xs font-bold uppercase tracking-wider ${cfg.color}`}>{s}</span>
                     <span className="text-[10px] text-on-surface-variant ml-auto">
                       {s === "critical" && "Immediate action required"}
-                      {s === "high" && "50+ upvotes or 100+ affected"}
+                      {s === "high" && "50+ upvotes"}
                       {s === "medium" && "5+ upvotes"}
                       {s === "low" && "Newly reported"}
                     </span>
