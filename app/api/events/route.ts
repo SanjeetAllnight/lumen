@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  collection, getDocs, addDoc, query, orderBy, Timestamp,
+  collection, getDocs, addDoc, query, orderBy, where, Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// GET /api/events — fetch all events sorted by date desc
+// GET /api/events — fetch only approved events, sorted by date desc
 export async function GET() {
   try {
-    const q = query(collection(db, "events"), orderBy("date", "desc"));
+    const q = query(
+      collection(db, "events"),
+      where("status", "==", "approved"),
+      orderBy("date", "desc")
+    );
     const snapshot = await getDocs(q);
     const events = snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -22,11 +26,19 @@ export async function GET() {
   }
 }
 
-// POST /api/events — create a new event
+// GET /api/events?pending=true — fetch pending events for admin
+export async function OPTIONS() {
+  return NextResponse.json({});
+}
+
+// POST /api/events — create a new event with status = pending
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { title, description, location, category, date } = body;
+    const {
+      title, description, location, date,
+      imageUrl, coordinatorName, coordinatorPhone, coordinatorEmail, createdBy,
+    } = body;
 
     if (!title || !location) {
       return NextResponse.json({ error: "title and location are required" }, { status: 400 });
@@ -35,10 +47,14 @@ export async function POST(req: NextRequest) {
     const newEvent = {
       title,
       description: description || "",
-      location: location,
-      category: category || "General",
+      location,
       date: date ? Timestamp.fromDate(new Date(date)) : Timestamp.now(),
-      attendees: 0,
+      imageUrl: imageUrl || "",
+      coordinatorName: coordinatorName || "",
+      coordinatorPhone: coordinatorPhone || "",
+      coordinatorEmail: coordinatorEmail || "",
+      status: "pending",
+      createdBy: createdBy || "anonymous",
       createdAt: Timestamp.now(),
     };
 
@@ -48,7 +64,7 @@ export async function POST(req: NextRequest) {
       ...newEvent,
       date: new Date(date || Date.now()).toISOString(),
       createdAt: new Date().toISOString(),
-    });
+    }, { status: 201 });
   } catch (error) {
     console.error("[POST /api/events]", error);
     return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
