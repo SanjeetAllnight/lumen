@@ -82,7 +82,7 @@ export default function ComplaintsPage() {
                 {/* Badge */}
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Impact Level</span>
-                  <span className="text-lg font-black uppercase tracking-tight text-on-surface"><span className="text-error">{issue1?.affected}</span> STUDENTS AFFECTED</span>
+                  <span className="text-lg font-black uppercase tracking-tight text-on-surface"><span className="text-error">{issue1?.affectedCount}</span> STUDENTS AFFECTED</span>
                 </div>
               </div>
 
@@ -157,7 +157,7 @@ export default function ComplaintsPage() {
                   <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                   <span className="text-lg font-bold">{issue2?.upvotes}</span>
                 </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue2?.affected} STUDENTS AFFECTED</span>
+                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue2?.affectedCount} STUDENTS AFFECTED</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -195,7 +195,7 @@ export default function ComplaintsPage() {
                   <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                   <span className="text-lg font-bold">{issue3?.upvotes}</span>
                 </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue3?.affected} STUDENTS AFFECTED</span>
+                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue3?.affectedCount} STUDENTS AFFECTED</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -231,7 +231,7 @@ export default function ComplaintsPage() {
                   <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                   <span className="text-lg font-bold">{issue4?.upvotes}</span>
                 </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue4?.affected} STUDENTS AFFECTED</span>
+                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue4?.affectedCount} STUDENTS AFFECTED</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -269,7 +269,7 @@ export default function ComplaintsPage() {
                     <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                     <span className="text-lg font-bold">{issue.upvotes}</span>
                   </button>
-                  <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue.affected} STUDENTS AFFECTED</span>
+                  <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue.affectedCount} STUDENTS AFFECTED</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

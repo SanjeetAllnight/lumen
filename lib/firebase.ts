@@ -11,6 +11,12 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Check if Firebase config is missing
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey.trim() === "") {
+  console.error("🔥 Firebase Error: Missing Firebase configuration!");
+  console.error("Please ensure you have filled in your .env.local file with valid keys.");
+}
+
 // Prevent duplicate initialization in Next.js dev mode (hot reload)
 let app: FirebaseApp;
 if (!getApps().length) {

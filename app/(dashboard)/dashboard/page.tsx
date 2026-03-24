@@ -49,7 +49,7 @@ export default function DashboardPage() {
                     <div className="w-14 h-14 rounded-full border-4 border-surface-container-lowest bg-surface-container-high flex items-center justify-center text-xs font-bold text-on-surface-variant">+842</div>
                   </div>
                   <div className="text-sm">
-                    <div className="text-on-surface text-2xl font-black">{issue1?.affected} Students</div>
+                    <div className="text-on-surface text-2xl font-black">{issue1?.affectedCount} Students</div>
                     <div className="text-on-surface-variant font-bold uppercase tracking-widest text-[10px]">Actively Affected</div>
                   </div>
                 </div>
