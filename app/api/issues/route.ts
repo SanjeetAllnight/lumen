@@ -10,6 +10,8 @@ import {
 import { db } from "@/lib/firebase";
 import { generateSummary } from "@/lib/gemini";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/issues — fetch all issues, sorted by upvotes desc
 export async function GET() {
   try {

@@ -108,17 +108,30 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const upvoteIssue = useCallback((id: string) => {
+    const upvotedKey = `upvoted_${id}`;
+    if (typeof window !== "undefined" && localStorage.getItem(upvotedKey)) {
+      showToast("You've already supported this issue! 👍", "error", "thumb_up");
+      return;
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem(upvotedKey, "true");
+    }
+    // Optimistic update
     setIssues((prev) =>
       prev.map((issue) =>
-        issue.id === id ? { ...issue, upvotes: issue.upvotes + 1, affectedCount: issue.affectedCount + 1 } : issue
+        issue.id === id ? { ...issue, upvotes: issue.upvotes + 1 } : issue
       )
     );
     showToast("Your support has been counted! 👍", "success", "thumb_up");
-
-    fetch(`/api/issues/${id}/upvote`, { method: "PATCH" }).catch(() => {
+    fetch(`/api/issues/${id}/upvote`, { method: "PATCH" }).catch((err) => {
+      console.error("[upvoteIssue]", err);
+      // Roll back on failure
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(upvotedKey);
+      }
       setIssues((prev) =>
         prev.map((issue) =>
-          issue.id === id ? { ...issue, upvotes: issue.upvotes - 1, affectedCount: issue.affectedCount - 1 } : issue
+          issue.id === id ? { ...issue, upvotes: issue.upvotes - 1 } : issue
         )
       );
       showToast("Upvote failed. Please try again.", "error", "error");
@@ -171,9 +184,17 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ issueId, content, author: "Current User" }),
       });
       if (!res.ok) throw new Error("Failed to post comment");
-      const comment = await res.json();
+      const newComment = await res.json();
+      // Update local state to sync comment count
+      setIssues((prev) =>
+        prev.map((i) =>
+          i.id === issueId
+            ? { ...i, comments: [...(i.comments || []), newComment] }
+            : i
+        )
+      );
       showToast("Comment posted! 💬", "success", "forum");
-      return comment;
+      return newComment;
     } catch (err) {
       console.error("[addComment]", err);
       showToast("Failed to post comment.", "error", "error");
