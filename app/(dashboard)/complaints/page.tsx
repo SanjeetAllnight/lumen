@@ -82,16 +82,16 @@ export default function ComplaintsPage() {
                 {/* Badge */}
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Impact Level</span>
-                  <span className="text-lg font-black uppercase tracking-tight text-on-surface"><span className="text-error">{issue1?.affected}</span> STUDENTS AFFECTED</span>
+                  <span className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Active Issue</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-6">
                 {/* Reactions */}
                 <div className="flex gap-4 bg-surface-container-lowest/80 p-3 rounded-2xl border border-outline-variant/20 shadow-inner">
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Anger">😡</button>
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Urgent">⚠️</button>
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Support">👍</button>
+                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Anger">!</button>
+                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Urgent">!!</button>
+                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Support">+</button>
                 </div>
                 {/* Avatars */}
                 <div className="flex flex-col items-end gap-2">
@@ -157,13 +157,13 @@ export default function ComplaintsPage() {
                   <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                   <span className="text-lg font-bold">{issue2?.upvotes}</span>
                 </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue2?.affected} STUDENTS AFFECTED</span>
+                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">Active Issue</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Frustrated">😡</button>
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Warning">⚠️</button>
+                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Frustrated">!</button>
+                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Warning">!!</button>
                   </div>
                   <div className="flex -space-x-2">
                     <div className="w-6 h-6 rounded-full border border-surface bg-slate-400"></div>
@@ -195,12 +195,12 @@ export default function ComplaintsPage() {
                   <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                   <span className="text-lg font-bold">{issue3?.upvotes}</span>
                 </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue3?.affected} STUDENTS AFFECTED</span>
+                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">Active Issue</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Good Luck">👍</button>
+                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Good Luck">+</button>
                   </div>
                   <div className="flex -space-x-2">
                     <div className="w-6 h-6 rounded-full border border-surface bg-slate-600"></div>
@@ -231,12 +231,12 @@ export default function ComplaintsPage() {
                   <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                   <span className="text-lg font-bold">{issue4?.upvotes}</span>
                 </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue4?.affected} STUDENTS AFFECTED</span>
+                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">Active Issue</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Hazardous">⚠️</button>
+                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Hazardous">!!</button>
                   </div>
                   <div className="flex -space-x-2">
                     <div className="w-6 h-6 rounded-full border border-surface bg-slate-300"></div>
@@ -269,7 +269,7 @@ export default function ComplaintsPage() {
                     <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                     <span className="text-lg font-bold">{issue.upvotes}</span>
                   </button>
-                  <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue.affected} STUDENTS AFFECTED</span>
+                  <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">Active Issue</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

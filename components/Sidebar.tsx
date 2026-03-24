@@ -18,10 +18,6 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 h-full w-64 z-40 bg-slate-950/40 backdrop-blur-2xl border-r border-slate-800/50 hidden lg:flex flex-col pt-20 pb-8 px-4 shadow-2xl shadow-purple-900/20">
-      <div className="mb-10 px-4">
-        <h2 className="font-['Space_Grotesk'] uppercase tracking-widest text-purple-200 text-xs font-bold mb-1">Observatory</h2>
-        <p className="text-slate-500 text-[10px] font-medium font-['Manrope']">Campus Live Feed</p>
-      </div>
       <nav className="flex-1 space-y-1">
         {navLinks.map((link) => {
           const isActive = pathname === link.href;

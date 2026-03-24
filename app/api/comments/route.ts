@@ -10,6 +10,8 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/comments?issueId=[id] — fetch comments for a specific issue
 export async function GET(req: NextRequest) {
   try {

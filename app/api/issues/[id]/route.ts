@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/issues/[id] — fetch a single issue by Firestore document ID
 export async function GET(
   _req: NextRequest,

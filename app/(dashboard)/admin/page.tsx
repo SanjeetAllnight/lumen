@@ -49,21 +49,6 @@ export default function AdminIntelligencePage() {
 
         {/* 2. Systems Overview: Quick Stats */}
         <section className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-          {/* Students Affected Card */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/5 relative overflow-hidden group transition-all duration-300 glow-hover">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
-            <div className="relative z-10">
-              <span className="text-xs font-headline tracking-widest text-primary uppercase block mb-2">Lumen Check</span>
-              <div className="flex flex-col">
-                <h3 className="text-5xl font-headline font-bold text-on-surface">3,284</h3>
-                <p className="text-sm text-on-surface-variant mt-1">Students Affected Right Now</p>
-                <div className="mt-4 flex items-center gap-2 text-xs font-bold text-error">
-                  <span className="material-symbols-outlined text-sm">trending_up</span>
-                  +402 from HVAC failure
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="glass-panel rounded-3xl p-6 border border-white/5 transition-all duration-300 glow-hover">

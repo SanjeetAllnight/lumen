@@ -41,7 +41,7 @@ export default function EventsPage() {
                 <img alt="user avatar" className="w-10 h-10 rounded-full border-2 border-surface shadow-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCca6RJbqXehGiJ63ynHObxyzONObw0oDiAavqu3klDLrzk0R9O5hpELuHyjn4IIdu1eds7P86c5fKk7g5FzZxdKSYfiSYFeeWaS6ZHp03Grb5oC9rud8c2AlI01hR3843szb4YnardvEEPcFl8cFz3DwNTEzzR_8f-t4uqcug8U-72dpPLsOJyTtOi0Bv-iaUhCSym7hXiXJj53QziXmQeNeyosf7dD5smnVaOnqzJ76qPpjKwidxH0CYzrgR4wMA7lPnHAzvApY8" />
                 <div className="w-10 h-10 rounded-full border-2 border-surface bg-surface-container-high flex items-center justify-center text-[10px] font-bold text-primary shadow-lg">+2.4k</div>
               </div>
-              <span className="text-xs font-bold text-on-surface-variant uppercase tracking-tighter">👥 2.4k already going</span>
+              <span className="text-xs font-bold text-on-surface-variant uppercase tracking-tighter">2.4k already going</span>
             </div>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default function EventsPage() {
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqeeUaLVPWc4DNCLwI8vR9Z-X4yu1bejiK-j2M1U_pF6jKRrUXDEjSD-PvR49SyJnJbKkY1TB5GDea6fOZDAC3RW6RDB1yVLeLZSkoW2AMj8vmPV8P39l8mg9rI0PW6-gu_Pkr4v3QKvE5PIeLsREXNVI-ceMTruOWVnXJVawHNFiuhn6Y7Yizwmym9IriH4f9LXKaaMd2YBJ7Q9G4niLITRePADgoXW7U0x2azOP5OG_yeDPJ3446lilriFJN9Orz5Nv9M_gtIkA"
                 />
                 <div className="absolute top-6 left-6 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-on-secondary text-[10px] font-black uppercase tracking-widest shadow-lg">
-                  📈 Gaining traction
+                  Gaining traction
                 </div>
               </div>
               <div className="w-full md:w-1/2 p-10 flex flex-col justify-between">
@@ -105,7 +105,7 @@ export default function EventsPage() {
                 alt="vibrant outdoor university festival" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm0JFYmnmyjCUyCtTYL3UVOqQBeRUtdze4N7MWVI1Em4WQdYzEBZRrqO341Di7EUdhZqwUWc1IfuYorEqNtgWH1Q0OeyesygGusGQLB_btDth6g8vXuSufrC_IwAwCBNsfkFKISDL8piTTrMRRdgfdNJdRahN11AOgZQexyVKwUUpwHr8RvdZWqb2T6ePkorIIdyzPXZtwmxKy_ffO_TgR6MgiJ7a-20oNyTfzIWjCyMsHRrukkNTjrStgm1jA7PM_Q3jrylBeP9o"
               />
-              <div className="absolute top-4 left-4 px-3 py-1 bg-primary/90 backdrop-blur-md rounded-full text-[10px] font-black text-on-primary-fixed uppercase tracking-widest">🔥 Hot Ticket</div>
+              <div className="absolute top-4 left-4 px-3 py-1 bg-primary/90 backdrop-blur-md rounded-full text-[10px] font-black text-on-primary-fixed uppercase tracking-widest">Hot Ticket</div>
             </div>
             <div className="flex-1">
               <h3 className="font-headline text-2xl font-bold mb-3">Neon Nights Gala</h3>
@@ -146,10 +146,10 @@ export default function EventsPage() {
               <img 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                 alt="camera equipment" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSsNTRXy5l9YP-2DQXOlrxvTAFPnibC0ZmYyvLj4LAgy4WE6LXfzIRBcIqoDL7ZfzCgdyE1iKL59mdQ5J36QwZ327Q_h7fSlUvWY06pa2wPRaNmAIdw7h8dpqg24qtH64SCDHXex4PrhkReSPwvdo_vtaLLGX8t0EodG5L6LIx9woXKEJJB_9L1gZt1rIl_hpb4ASOHOIMwoJyneETi76o4TrK7LvYVa_ilIwsX7rjXa7Pxq8I_gDLMEHWF9p_TgRLRxPlclDRJ9I"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSsNTRXy5l9YP-2DQXOlrxvTAFPnibC0ZmYyvLj4LAgy4WE6LXfzIRBcIqoDL7ZfzCgdyE1iKL59mdQ5J36QwZ327Q_h7fSlUvWY06pa2wPRaNmAIdw7h8dpqg24qtH64SCDHXex4PrhkReSPwvdo_vtaLLGX8t0EodG5L6LIx9woXKEJJB_9L1gZt1rIl_hpb4ASOHOIMwoJyneETi76o4TrK7LvYVa_ilIwsX7rjXa3Pxq8I_gDLMEHWF9p_TgRLRxPlclDRJ9I"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-surface-dim/90 via-transparent to-transparent"></div>
-              <div className="absolute top-5 right-5 bg-secondary text-on-secondary text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-xl">🔥 Most Popular</div>
+              <div className="absolute top-5 right-5 bg-secondary text-on-secondary text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-xl">Most Popular</div>
               <div className="absolute bottom-6 left-6">
                 <span className="text-on-surface font-headline text-xl font-bold block mb-1">Cinematography 101</span>
                 <div className="flex items-center gap-1.5 text-secondary">
@@ -166,7 +166,7 @@ export default function EventsPage() {
                   <div className="w-7 h-7 rounded-full border border-surface-container bg-slate-700"></div>
                   <div className="w-7 h-7 rounded-full border border-surface-container bg-slate-600"></div>
                 </div>
-                <span className="text-[10px] text-on-surface font-bold uppercase tracking-tighter">👥 42 friends present</span>
+                <span className="text-[10px] text-on-surface font-bold uppercase tracking-tighter">42 friends present</span>
               </div>
               <button className="w-full py-3 bg-secondary text-on-secondary rounded-xl font-bold text-xs hover:brightness-110 transition-all btn-secondary-glow">Jump In Now</button>
             </div>
@@ -188,11 +188,11 @@ export default function EventsPage() {
             <div className="p-6 flex flex-col flex-1">
               <div className="flex items-center justify-between text-[9px] text-on-surface-variant font-black uppercase tracking-widest mb-4">
                 <span>Social Vibe</span>
-                <span className="text-primary">📈 Gaining traction</span>
+                <span className="text-primary">Gaining traction</span>
               </div>
               <p className="text-xs text-on-surface-variant mb-6 flex-1 line-clamp-2 font-medium">Smooth acoustic melodies and signature campus brews. Perfect late-night study break.</p>
               <div className="flex items-center gap-2 mb-6">
-                <span className="text-[10px] text-on-surface font-bold uppercase tracking-tighter">👥 86 attending</span>
+                <span className="text-[10px] text-on-surface font-bold uppercase tracking-tighter">86 attending</span>
               </div>
               <button className="w-full py-3 bg-primary/10 text-primary-fixed rounded-xl font-bold text-xs hover:bg-primary hover:text-on-primary transition-all btn-glow">Reserve My Table</button>
             </div>
@@ -237,11 +237,11 @@ export default function EventsPage() {
             <div className="p-6 flex flex-col flex-1">
               <div className="flex items-center justify-between text-[9px] text-on-surface-variant font-black uppercase tracking-widest mb-4">
                 <span>Wellness</span>
-                <span className="text-secondary font-bold">🔥 Trending Now</span>
+                <span className="text-secondary font-bold">Trending Now</span>
               </div>
               <p className="text-xs text-on-surface-variant mb-6 flex-1 line-clamp-2 font-medium">Reset your flow in the garden. Guided meditation starts in an hour.</p>
               <div className="flex items-center gap-2 mb-6">
-                <span className="text-[10px] text-on-surface font-bold uppercase tracking-tighter">👥 120 attending</span>
+                <span className="text-[10px] text-on-surface font-bold uppercase tracking-tighter">120 attending</span>
               </div>
               <button className="w-full py-3 bg-primary/10 text-primary-fixed rounded-xl font-bold text-xs hover:bg-primary hover:text-on-primary transition-all btn-glow">Find My Zen</button>
             </div>

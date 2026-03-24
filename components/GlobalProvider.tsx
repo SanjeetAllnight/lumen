@@ -85,19 +85,32 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
 
   // Optimistic upvote → sync with API
   const upvoteIssue = useCallback((id: string) => {
+    const upvotedKey = `upvoted_${id}`;
+    if (typeof window !== "undefined" && localStorage.getItem(upvotedKey)) {
+      alert("You have already upvoted this issue.");
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(upvotedKey, "true");
+    }
+
     // Optimistic update
     setIssues((prev) =>
       prev.map((issue) =>
-        issue.id === id ? { ...issue, upvotes: issue.upvotes + 1, affectedCount: issue.affectedCount + 1 } : issue
+        issue.id === id ? { ...issue, upvotes: issue.upvotes + 1 } : issue
       )
     );
     // Fire and forget API call
     fetch(`/api/issues/${id}/upvote`, { method: "PATCH" }).catch((err) => {
       console.error("[upvoteIssue]", err);
       // Roll back on failure
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(upvotedKey);
+      }
       setIssues((prev) =>
         prev.map((issue) =>
-          issue.id === id ? { ...issue, upvotes: issue.upvotes - 1, affectedCount: issue.affectedCount - 1 } : issue
+          issue.id === id ? { ...issue, upvotes: issue.upvotes - 1 } : issue
         )
       );
     });
@@ -157,7 +170,18 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ issueId, content, author: "Current User" }),
       });
       if (!res.ok) throw new Error("Failed to post comment");
-      return await res.json();
+      const newComment = await res.json();
+      
+      // Update local state to sync comment count
+      setIssues((prev) =>
+        prev.map((i) =>
+          i.id === issueId
+            ? { ...i, comments: [...(i.comments || []), newComment] }
+            : i
+        )
+      );
+      
+      return newComment;
     } catch (err) {
       console.error("[addComment]", err);
       return null;
