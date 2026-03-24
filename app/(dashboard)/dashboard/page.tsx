@@ -47,27 +47,9 @@ export default function DashboardPage() {
                 <span className="text-primary/80 font-semibold">Summary from multiple reports:</span> Levels 3, 4, and 5 are currently uninhabitable. Student medical reports increasing. Infrastructure team arrival estimated in 45 minutes.
               </p>
               <div className="flex flex-wrap items-center gap-8 pt-4">
-                <div className="flex items-center gap-5">
-                  <div className="flex -space-x-4">
-                    <img className="w-14 h-14 rounded-full border-4 border-surface-container-lowest object-cover" alt="student profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsb7xA4zlIyEZvspyRU4q9n13AtYY5k7XrhxDzXxYDqNlXLntrk9T5KEqkfjB9j249C8MHDSDv37SNfIVETA3mEx82hcb9qUyvXdLbw4IogqzZTF4Eb2aXWmrek3V0YXl4_MiJ_K-P3jVHCDfGZEeKyPC-avsdtwAOcyUlvI5RfHxramFYo7jyOsyHbVLPrHFwrQuiQZ5IOOMKRn8u6-gXH9_4WBkHce9d1391rBWsK1Ti4bfa7QFLpaizhtJ2KasiJpQUY08G_yY" />
-                    <img className="w-14 h-14 rounded-full border-4 border-surface-container-lowest object-cover" alt="student profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5-pTrqP3vX8Pchnf0pRBGLvGyT_MvuoBqiLRxnXMtOtE0qVFKxap4VL_LFqwHcUuFsQJlaANK_TvMwqXeSXTHdOcpscJuwoHv1PRhuuKYlD2YrB5hV1j0geIyMqrSCeW59WyRg-fzdFKkjThhcGqwRh29HhG0kCpogSU98tLuhVGdLdFDTjvMB90c4vBE45iT9L_7O86jeSp5Lw9QYwn_8ZU4hTK2VlNxbCg0wDqGcQhNuxsxCOZ1ik8mrNU1fc3427eb7WL-mh4" />
-                    <div className="w-14 h-14 rounded-full border-4 border-surface-container-lowest bg-surface-container-high flex items-center justify-center text-xs font-bold text-on-surface-variant">+842</div>
-                  </div>
-                  <div className="text-sm">
-                    <div className="text-on-surface text-2xl font-black">{issue1?.affectedCount ?? 842} Students</div>
-                    <div className="text-on-surface-variant font-bold uppercase tracking-widest text-[10px]">Actively Affected</div>
-                  </div>
-                </div>
-                <div className="h-10 w-px bg-white/10 hidden md:block"></div>
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Library Density</div>
-                  <div className="flex gap-1">
-                    <div className="w-8 h-2 rounded-full bg-error"></div>
-                    <div className="w-8 h-2 rounded-full bg-error"></div>
-                    <div className="w-8 h-2 rounded-full bg-error"></div>
-                    <div className="w-8 h-2 rounded-full bg-white/10"></div>
-                  </div>
-                </div>
+                <button onClick={() => router.push('/issue/north-lib')} className="px-6 py-3 border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-white/5 transition-colors">
+                  View Details &rarr;
+                </button>
               </div>
             </div>
             <div className="relative z-10 flex flex-col items-center gap-4 min-w-[240px]">
