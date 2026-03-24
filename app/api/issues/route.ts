@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       category: category || "General",
       upvotes: 0,
       affectedCount: 1,
-      status: "reported",
+      status: "open",
       createdAt: Timestamp.now(),
     };
 
