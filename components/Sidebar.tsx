@@ -16,6 +16,10 @@ export default function Sidebar() {
     { name: "Activity", href: "/activity", icon: "insights" },
   ];
 
+  if (user?.role === "admin") {
+    navLinks.push({ name: "Admin", href: "/admin", icon: "admin_panel_settings" });
+  }
+
   return (
     <aside className="fixed left-0 top-0 h-full w-64 z-40 bg-slate-950/40 backdrop-blur-2xl border-r border-slate-800/50 hidden lg:flex flex-col pt-20 pb-8 px-4 shadow-2xl shadow-purple-900/20">
       <nav className="flex-1 space-y-1">

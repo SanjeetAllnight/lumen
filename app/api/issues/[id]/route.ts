@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";
@@ -27,5 +27,26 @@ export async function GET(
   } catch (error) {
     console.error("[GET /api/issues/[id]]", error);
     return NextResponse.json({ error: "Failed to fetch issue" }, { status: 500 });
+  }
+}
+
+// PATCH /api/issues/[id] — resolve an issue (admin only)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { status } = await req.json();
+
+    if (status !== "resolved") {
+      return NextResponse.json({ error: "status must be 'resolved'" }, { status: 400 });
+    }
+
+    await updateDoc(doc(db, "issues", id), { status });
+    return NextResponse.json({ id, status });
+  } catch (error) {
+    console.error("[PATCH /api/issues/[id]]", error);
+    return NextResponse.json({ error: "Failed to update issue" }, { status: 500 });
   }
 }

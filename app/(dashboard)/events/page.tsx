@@ -195,7 +195,34 @@ function AddEventModal({ onClose, onSubmitted, userId }: { onClose: () => void; 
                 </div>
                 <div>
                   <label className={labelClass}>Location *</label>
-                  <input name="location" value={form.location} onChange={handleChange} placeholder="e.g. Main Auditorium" className={inputClass} required />
+                  <div className="relative">
+                    <select
+                      name="location"
+                      value={form.location}
+                      onChange={(e) => handleChange(e as any)}
+                      className={`${inputClass} appearance-none pr-10`}
+                      required
+                    >
+                      <option value="" disabled>Select a location</option>
+                      <option value="Computer Dept">Computer Dept</option>
+                      <option value="IT dept">IT dept</option>
+                      <option value="Civil dept">Civil dept</option>
+                      <option value="ETC dept">ETC dept</option>
+                      <option value="ENE dept">ENE dept</option>
+                      <option value="Mech dept">Mech dept</option>
+                      <option value="Library">Library</option>
+                      <option value="Canteen">Canteen</option>
+                      <option value="Main Gate">Main Gate</option>
+                      <option value="Admin Block">Admin Block</option>
+                      <option value="Academic Block">Academic Block</option>
+                      <option value="Mining">Mining</option>
+                      <option value="Hostel">Hostel</option>
+                      <option value="Ground">Ground</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                      <span className="material-symbols-outlined text-on-surface-variant/50">expand_more</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className={labelClass}>Event Image <span className="text-primary/60">(JPG / PNG)</span></label>

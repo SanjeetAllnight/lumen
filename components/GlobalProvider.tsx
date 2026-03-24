@@ -62,6 +62,8 @@ type GlobalContextType = {
   getComments: (issueId: string) => Promise<Comment[]>;
   addFeedback: (type: string, message: string) => void;
   addActivity: (activity: Omit<Activity, "id" | "timestamp">) => void;
+  updateEventStatus: (id: string, status: "approved" | "rejected") => Promise<void>;
+  resolveIssue: (id: string) => Promise<void>;
 };
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -221,6 +223,40 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
     ]);
   }, []);
 
+  const resolveIssue = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/issues/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "resolved" }),
+      });
+      if (!res.ok) throw new Error();
+      setIssues(prev => prev.map(i => i.id === id ? { ...i, status: "resolved" } : i));
+      showToast("Issue marked as resolved! ✅", "success", "check_circle");
+    } catch {
+      showToast("Failed to resolve issue.", "error", "error");
+    }
+  }, [showToast]);
+
+  const updateEventStatus = useCallback(async (id: string, status: "approved" | "rejected") => {
+    try {
+      const res = await fetch(`/api/events/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error();
+      if (status === "approved") {
+        setEvents(prev => prev.map(e => e.id === id ? { ...e, status: "approved" } : e));
+      } else {
+        setEvents(prev => prev.filter(e => e.id !== id));
+      }
+      showToast(`Event ${status}!`, "success", status === "approved" ? "check_circle" : "cancel");
+    } catch {
+      showToast(`Failed to ${status} event.`, "error", "error");
+    }
+  }, [showToast]);
+
   const addFeedback = useCallback((type: string, message: string) => {
     console.log("[Feedback]", type, message);
     showToast("Feedback submitted! Thank you 🙏", "success", "favorite");
@@ -230,6 +266,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
     <GlobalContext.Provider value={{
       issues, events, activities, isLoading,
       upvoteIssue, addComment, addIssue, getIssue, getComments, addFeedback, addActivity,
+      updateEventStatus, resolveIssue,
     }}>
       {children}
     </GlobalContext.Provider>

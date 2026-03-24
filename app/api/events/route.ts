@@ -5,13 +5,14 @@ import {
 import { db } from "@/lib/firebase";
 
 // GET /api/events — fetch only approved events, sorted by date desc
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const q = query(
-      collection(db, "events"),
-      where("status", "==", "approved"),
-      orderBy("date", "desc")
-    );
+    const { searchParams } = req.nextUrl;
+    const pending = searchParams.get("pending") === "true";
+
+    const q = pending
+      ? query(collection(db, "events"), where("status", "==", "pending"), orderBy("date", "desc"))
+      : query(collection(db, "events"), where("status", "==", "approved"), orderBy("date", "desc"));
     const snapshot = await getDocs(q);
     const events = snapshot.docs.map((doc) => ({
       id: doc.id,
