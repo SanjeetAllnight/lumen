@@ -1,229 +1,503 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+type Severity = "critical" | "high" | "medium" | "low";
+type FilterType = "all" | "issues" | "events";
+
+type Issue = {
+  id: string;
+  title: string;
+  description: string;
+  aiSummary?: string;
+  category: string;
+  location: string;
+  status: string;
+  upvotes: number;
+  affectedCount: number;
+  severity?: Severity;
+  createdAt: string | null;
+};
+
+type Event = {
+  id: string;
+  title: string;
+  description: string;
+  date: string | null;
+  location: string;
+  coordinatorName: string;
+  status: string;
+  createdAt: string | null;
+};
+
+type ActivityItem =
+  | { kind: "issue"; data: Issue; sortKey: number }
+  | { kind: "event"; data: Event; sortKey: number };
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+const SEVERITY_ORDER: Record<Severity, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+};
+
+/** Derive severity from existing issue fields if not stored */
+function deriveSeverity(issue: Issue): Severity {
+  if (issue.severity && ["critical", "high", "medium", "low"].includes(issue.severity)) {
+    return issue.severity;
+  }
+  const s = issue.status?.toLowerCase() ?? "";
+  if (s === "critical" || s === "urgent") return "critical";
+  if (issue.upvotes >= 50 || issue.affectedCount >= 100) return "critical";
+  if (issue.upvotes >= 20 || issue.affectedCount >= 30) return "high";
+  if (issue.upvotes >= 5) return "medium";
+  return "low";
+}
+
+function timeAgo(isoString: string | null): string {
+  if (!isoString) return "Unknown";
+  const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+// ─── Severity Config ───────────────────────────────────────────────────────────
+
+const SEVERITY_CONFIG: Record<Severity, {
+  label: string;
+  color: string;       // text color class
+  bg: string;          // card bg tint
+  border: string;      // card border
+  badgeBg: string;     // badge pill bg
+  dot: string;         // dot color
+  icon: string;
+}> = {
+  critical: {
+    label: "CRITICAL",
+    color: "text-error",
+    bg: "bg-error/5",
+    border: "border-error/30 hover:border-error/60",
+    badgeBg: "bg-error/10 text-error border-error/20",
+    dot: "bg-error",
+    icon: "emergency_home",
+  },
+  high: {
+    label: "HIGH",
+    color: "text-orange-400",
+    bg: "bg-orange-500/5",
+    border: "border-orange-500/20 hover:border-orange-400/50",
+    badgeBg: "bg-orange-500/10 text-orange-400 border-orange-400/20",
+    dot: "bg-orange-400",
+    icon: "warning",
+  },
+  medium: {
+    label: "MEDIUM",
+    color: "text-yellow-400",
+    bg: "bg-yellow-500/5",
+    border: "border-yellow-500/20 hover:border-yellow-400/40",
+    badgeBg: "bg-yellow-500/10 text-yellow-400 border-yellow-400/20",
+    dot: "bg-yellow-400",
+    icon: "info",
+  },
+  low: {
+    label: "LOW",
+    color: "text-on-surface-variant",
+    bg: "bg-surface-container/30",
+    border: "border-white/5 hover:border-white/20",
+    badgeBg: "bg-white/5 text-on-surface-variant border-white/10",
+    dot: "bg-on-surface-variant",
+    icon: "feedback",
+  },
+};
+
+// ─── Issue Card ────────────────────────────────────────────────────────────────
+
+function IssueCard({ issue }: { issue: Issue }) {
+  const severity = deriveSeverity(issue);
+  const cfg = SEVERITY_CONFIG[severity];
+  const isCritical = severity === "critical";
+
+  return (
+    <div className={`glass-panel p-6 rounded-3xl border ${cfg.border} transition-all group relative overflow-hidden ${cfg.bg}`}>
+      {isCritical && (
+        <div className="absolute top-0 right-0 w-32 h-32 bg-error/10 blur-3xl -mr-10 -mt-10" />
+      )}
+      <div className="flex gap-5 items-start">
+        {/* Icon */}
+        <div className="relative shrink-0">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${cfg.badgeBg}`}>
+            <span className={`material-symbols-outlined ${cfg.color}`}>{cfg.icon}</span>
+          </div>
+          {(severity === "critical" || severity === "high") && (
+            <div className={`absolute -top-1 -right-1 w-3 h-3 ${cfg.dot} rounded-full border-2 border-background animate-pulse`} />
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start mb-1 gap-4">
+            <div className="flex items-center gap-2 min-w-0">
+              {/* ACTIVE ISSUE label */}
+              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border shrink-0 ${cfg.badgeBg}`}>
+                ACTIVE ISSUE
+              </span>
+              <h3 className={`text-base font-headline font-bold ${cfg.color} truncate`}>
+                {issue.title}
+              </h3>
+            </div>
+            <span className={`text-[10px] font-bold font-mono shrink-0 ${isCritical ? "text-error bg-error/10" : "text-on-surface-variant"} px-2 py-0.5 rounded-full`}>
+              {timeAgo(issue.createdAt)}
+            </span>
+          </div>
+
+          <p className="text-sm text-on-surface-variant leading-relaxed mb-3 max-w-xl line-clamp-2">
+            {issue.aiSummary || issue.description}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Severity badge */}
+            <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase px-2.5 py-1 rounded-md border ${cfg.badgeBg}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${isCritical ? "animate-pulse" : ""}`} />
+              {cfg.label}
+            </span>
+            {/* Location */}
+            {issue.location && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant">
+                <span className="material-symbols-outlined text-xs">location_on</span>
+                {issue.location}
+              </span>
+            )}
+            {/* Upvotes */}
+            <span className="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant ml-auto">
+              <span className="material-symbols-outlined text-xs">thumb_up</span>
+              {issue.upvotes}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Event Card ────────────────────────────────────────────────────────────────
+
+function EventCard({ event }: { event: Event }) {
+  const eventDate = event.date ? new Date(event.date) : null;
+  const isUpcoming = eventDate ? eventDate > new Date() : false;
+  const isLive = eventDate
+    ? Math.abs(Date.now() - eventDate.getTime()) < 3 * 60 * 60 * 1000  // within 3h
+    : false;
+
+  return (
+    <div className="glass-panel p-6 rounded-3xl border border-tertiary/15 hover:border-tertiary/40 transition-all group relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-tertiary/5 blur-3xl -mr-8 -mt-8" />
+      <div className="flex gap-5 items-start">
+        {/* Icon */}
+        <div className="relative shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-tertiary/10 flex items-center justify-center border border-tertiary/20">
+            <span className="material-symbols-outlined text-tertiary">stadium</span>
+          </div>
+          {isLive && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-tertiary rounded-full border-2 border-background animate-pulse" />
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start mb-1 gap-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border shrink-0 ${
+                isLive
+                  ? "bg-tertiary/10 text-tertiary border-tertiary/20"
+                  : "bg-white/5 text-on-surface-variant border-white/10"
+              }`}>
+                {isLive ? "EVENT LIVE" : isUpcoming ? "UPCOMING" : "EVENT"}
+              </span>
+              <h3 className="text-base font-headline font-bold text-tertiary truncate">{event.title}</h3>
+            </div>
+            <span className="text-[10px] font-bold font-mono text-on-surface-variant shrink-0">
+              {timeAgo(event.createdAt)}
+            </span>
+          </div>
+
+          <p className="text-sm text-on-surface-variant leading-relaxed mb-3 max-w-xl line-clamp-2">
+            {event.description}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {eventDate && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-tertiary bg-tertiary/5 px-2.5 py-1 rounded-md border border-tertiary/10">
+                <span className="material-symbols-outlined text-xs">calendar_today</span>
+                {eventDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                {" · "}
+                {eventDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+            {event.location && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant">
+                <span className="material-symbols-outlined text-xs">location_on</span>
+                {event.location}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+
 export default function ActivityStreamPage() {
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<FilterType>("all");
+
+  // Counters
+  const criticalCount = issues.filter((i) => deriveSeverity(i) === "critical").length;
+
+  // Fetch both in parallel
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [issueRes, eventRes] = await Promise.all([
+        fetch("/api/issues"),
+        fetch("/api/events"),
+      ]);
+      if (issueRes.ok) setIssues(await issueRes.json());
+      if (eventRes.ok) setEvents(await eventRes.json());
+    } catch (e) {
+      console.error("[ActivityStreamPage] fetchData:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    // Poll every 30s for live feel
+    const id = setInterval(fetchData, 30000);
+    return () => clearInterval(id);
+  }, [fetchData]);
+
+  // Build merged & sorted activity feed
+  const activityItems: ActivityItem[] = [];
+
+  if (filter !== "events") {
+    issues.forEach((issue) => {
+      activityItems.push({
+        kind: "issue",
+        data: issue,
+        // sort: severity first, then by recency
+        sortKey: SEVERITY_ORDER[deriveSeverity(issue)] * 1e12 - new Date(issue.createdAt ?? 0).getTime(),
+      });
+    });
+  }
+
+  if (filter !== "issues") {
+    events.forEach((event) => {
+      activityItems.push({
+        kind: "event",
+        data: event,
+        // Events sort after all issues when mixed; by date desc
+        sortKey: 4 * 1e12 - new Date(event.createdAt ?? 0).getTime(),
+      });
+    });
+  }
+
+  // Sort: issues by severity→recency; events after issues when "all"
+  activityItems.sort((a, b) => {
+    if (filter === "all") {
+      // Issues first (severity-sorted), events after
+      if (a.kind !== b.kind) return a.kind === "issue" ? -1 : 1;
+    }
+    return a.sortKey - b.sortKey;
+  });
+
+  const filterBtnClass = (f: FilterType) =>
+    `px-4 py-2 rounded-full text-xs font-bold transition-all ${
+      filter === f
+        ? "bg-primary text-on-primary shadow-lg shadow-primary/20"
+        : "glass-panel border border-white/10 text-on-surface-variant hover:bg-white/10"
+    }`;
+
   return (
     <>
-      <header className="flex justify-between items-end mb-10 px-6">
+      {/* Header */}
+      <header className="flex flex-wrap justify-between items-end mb-10 px-6 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse-dot"></span>
+            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
             <span className="text-secondary text-xs font-bold uppercase tracking-tighter">Live Ecosystem Feed</span>
           </div>
-          <h1 className="text-5xl font-headline font-bold text-on-background tracking-tighter">Activity Stream</h1>
+          <h1 className="text-5xl font-headline font-bold text-on-surface tracking-tighter">Activity Stream</h1>
+          <p className="text-on-surface-variant text-sm mt-1">Real-time campus status — issues &amp; events</p>
         </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 glass-panel rounded-full border border-outline-variant/20 text-xs font-bold hover:bg-white/10 transition-all">ALL SYSTEMS</button>
-          <button className="px-4 py-2 glass-panel rounded-full border border-outline-variant/20 text-xs font-bold text-error bg-error/5 hover:bg-error/10 transition-all">CRITICAL ONLY</button>
+
+        {/* Filter Buttons */}
+        <div className="flex items-center gap-2">
+          {criticalCount > 0 && (
+            <span className="flex items-center gap-1.5 text-[10px] font-black text-error bg-error/10 border border-error/20 px-3 py-1.5 rounded-full mr-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-error animate-ping" />
+              {criticalCount} CRITICAL
+            </span>
+          )}
+          <button id="filter-all" className={filterBtnClass("all")} onClick={() => setFilter("all")}>ALL</button>
+          <button id="filter-issues" className={filterBtnClass("issues")} onClick={() => setFilter("issues")}>ISSUES</button>
+          <button id="filter-events" className={filterBtnClass("events")} onClick={() => setFilter("events")}>EVENTS</button>
         </div>
       </header>
 
-      {/* Bento Grid Layout */}
+      {/* Body */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 px-6">
-        {/* Main Live Feed Column */}
+        {/* Main Feed */}
         <div className="lg:col-span-8 space-y-4">
-          {/* Activity Item: Issue */}
-          <div className="glass-panel p-6 rounded-3xl border border-primary/20 hover:border-primary/50 transition-all group relative overflow-hidden bg-primary/5 glow-card-urgent">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -mr-10 -mt-10"></div>
-            <div className="flex gap-6 items-start">
-              <div className="relative shrink-0">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                  <span className="material-symbols-outlined text-primary">construction</span>
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background animate-pulse-dot"></div>
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-headline font-bold text-primary">
-                      Multiple reports incoming: Block A
-                    </h3>
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0"></span>
-                  </div>
-                  <span className="text-[10px] text-primary font-bold font-mono bg-primary/10 px-2 py-0.5 rounded-full shrink-0">JUST NOW</span>
-                </div>
-                <p className="text-sm text-on-surface-variant leading-relaxed mb-4 max-w-xl">Our team is heading to elevator shaft 4 right now. We expect to have this sorted in 45 minutes. Please use the North stairs for now!</p>
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold text-secondary uppercase bg-secondary/5 px-2 py-1 rounded-md">
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span> Active Response
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs">person</span> Supervisor: K. Vance
-                  </span>
-                </div>
-              </div>
+          {loading ? (
+            <div className="flex justify-center py-24">
+              <span className="material-symbols-outlined text-5xl text-primary animate-spin">progress_activity</span>
             </div>
-          </div>
-
-          {/* Activity Item: WiFi Alert */}
-          <div className="glass-panel p-6 rounded-3xl border border-error/30 hover:border-error/50 transition-all group relative overflow-hidden bg-error/5 glow-card-critical">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-error/10 blur-3xl -mr-10 -mt-10"></div>
-            <div className="flex gap-6 items-start">
-              <div className="relative shrink-0">
-                <div className="w-12 h-12 rounded-2xl bg-error/10 flex items-center justify-center border border-error/20">
-                  <span className="material-symbols-outlined text-error">wifi_off</span>
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full border-2 border-background animate-pulse-dot"></div>
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-headline font-bold text-error">
-                      Network Drop: Critical Node 7
-                    </h3>
-                    <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse shrink-0"></span>
-                  </div>
-                  <span className="text-[10px] text-error font-bold font-mono bg-error/10 px-2 py-0.5 rounded-full shrink-0">JUST NOW</span>
-                </div>
-                <p className="text-sm text-on-surface-variant leading-relaxed mb-4 max-w-xl">The Central Library&apos;s main router just went dark. IT is on it—looks like a firmware glitch. Hang tight while we reconnect you.</p>
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold text-error uppercase bg-error/5 px-2 py-1 rounded-md">
-                    <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> Service Interruption
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs">location_on</span> Central Library
-                  </span>
-                </div>
-              </div>
+          ) : activityItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-3">
+              <span className="material-symbols-outlined text-5xl text-on-surface-variant opacity-30">inbox</span>
+              <p className="font-headline text-lg font-bold text-on-surface-variant">No recent activity</p>
+              <p className="text-sm text-on-surface-variant/50">
+                {filter === "issues" ? "No issues reported yet." : filter === "events" ? "No approved events found." : "Nothing to show right now."}
+              </p>
             </div>
-          </div>
-
-          {/* Activity Item: Event */}
-          <div className="glass-panel p-6 rounded-3xl border border-tertiary/10 hover:border-tertiary/30 transition-all group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-tertiary/5 blur-3xl -mr-10 -mt-10"></div>
-            <div className="flex gap-6 items-start">
-              <div className="relative shrink-0">
-                <div className="w-12 h-12 rounded-2xl bg-tertiary/10 flex items-center justify-center border border-tertiary/20">
-                  <span className="material-symbols-outlined text-tertiary">stadium</span>
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-tertiary rounded-full border-2 border-background animate-pulse-dot"></div>
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="text-lg font-headline font-bold text-tertiary">
-                    Spike detected: East Plaza density
-                  </h3>
-                  <span className="text-[10px] text-slate-500 font-mono shrink-0">2m AGO</span>
-                </div>
-                <p className="text-sm text-on-surface-variant leading-relaxed mb-4 max-w-xl">Whoa, it&apos;s getting crowded! Foot traffic near the auditorium is way up. We&apos;ve opened the extra gates to keep everyone moving smoothly.</p>
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold text-tertiary-fixed uppercase bg-tertiary/10 px-2 py-1 rounded-md">
-                    Monitoring
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs">groups</span> ~1,200 Active Users
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Activity Item: Resolved */}
-          <div className="glass-panel p-6 rounded-3xl border border-secondary/10 hover:border-secondary/30 transition-all group opacity-60">
-            <div className="flex gap-6 items-start">
-              <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center border border-secondary/20 shrink-0">
-                <span className="material-symbols-outlined text-secondary">check_circle</span>
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="text-lg font-headline font-bold text-secondary">Gate 4 is back in action</h3>
-                  <span className="text-[10px] text-slate-500 font-mono shrink-0">15m AGO</span>
-                </div>
-                <p className="text-sm text-on-surface-variant leading-relaxed mb-2 max-w-xl">Mechanical sensor recalibrated. Vehicle access is back to normal.</p>
-              </div>
-            </div>
-          </div>
+          ) : (
+            activityItems.map((item) =>
+              item.kind === "issue" ? (
+                <IssueCard key={`issue-${item.data.id}`} issue={item.data as Issue} />
+              ) : (
+                <EventCard key={`event-${item.data.id}`} event={item.data as Event} />
+              )
+            )
+          )}
         </div>
 
-        {/* Sidebar Analytics/Stats */}
+        {/* Sidebar */}
         <div className="lg:col-span-4 space-y-6">
-          {/* System Activity Map */}
-          <div className="glass-panel rounded-3xl overflow-hidden border border-outline-variant/10">
-            <div className="h-48 relative">
-              <div className="absolute inset-0 bg-slate-900" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCHtudNTG3bsKSO6Yb7icn7UOKxzHBwnD-OGpJwxhysZxlRUVJrmD4aPSLlBwXTMygSydjmKiByo3EU2nkuwpxpMGOTbH8E7kaadaOSOX74P7Br7k7MMLW9MkhepLz3xGHE8H7vfyJ35kM8TS0lX-GiMf75hS3BmrlxQdJyZyCB4VXfPYlRNdVHi7uqinx7RoB1tFRm5Anoax7PNtUZf_k8aYKoT36xJGPwhbbtdfTJaVx1i8EZxT5FI8ZeI5KUR_z_rMwC0bd_UcI')", backgroundSize: "cover" }}></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent"></div>
-              {/* Live Indicator Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative">
-                  <div className="absolute w-8 h-8 bg-secondary/20 rounded-full animate-ripple -left-2 -top-2"></div>
-                  <div className="w-4 h-4 bg-secondary rounded-full border-2 border-white/20 animate-pulse-dot"></div>
+          {/* Live Stats Card */}
+          <div className="glass-panel p-6 rounded-3xl border border-outline-variant/10 space-y-5">
+            <h4 className="font-headline font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary">bar_chart</span>
+              Live Summary
+            </h4>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs text-on-surface-variant">Active Issues</span>
+                  <span className="text-sm font-bold text-on-surface">{issues.length}</span>
+                </div>
+                <div className="flex gap-1 h-2">
+                  {(["critical", "high", "medium", "low"] as Severity[]).map((s) => {
+                    const count = issues.filter((i) => deriveSeverity(i) === s).length;
+                    const pct = issues.length > 0 ? (count / issues.length) * 100 : 0;
+                    const bgMap: Record<Severity, string> = {
+                      critical: "bg-error",
+                      high: "bg-orange-400",
+                      medium: "bg-yellow-400",
+                      low: "bg-on-surface-variant",
+                    };
+                    return pct > 0 ? (
+                      <div
+                        key={s}
+                        className={`${bgMap[s]} rounded-full h-full`}
+                        style={{ width: `${pct}%` }}
+                        title={`${s}: ${count}`}
+                      />
+                    ) : null;
+                  })}
+                  {issues.length === 0 && <div className="bg-surface-container-high rounded-full h-full w-full" />}
+                </div>
+                <div className="flex gap-3 mt-2 flex-wrap">
+                  {(["critical", "high", "medium", "low"] as Severity[]).map((s) => {
+                    const count = issues.filter((i) => deriveSeverity(i) === s).length;
+                    const colorMap: Record<Severity, string> = {
+                      critical: "text-error",
+                      high: "text-orange-400",
+                      medium: "text-yellow-400",
+                      low: "text-on-surface-variant",
+                    };
+                    return (
+                      <span key={s} className={`text-[9px] font-bold uppercase ${colorMap[s]}`}>
+                        {count} {s}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
-              <div className="absolute bottom-4 left-4">
+
+              <div className="h-px bg-white/5" />
+
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-on-surface-variant">Approved Events</span>
+                <span className="text-sm font-bold text-tertiary">{events.length}</span>
+              </div>
+              <div className="w-full bg-surface-container-low h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-tertiary h-full rounded-full transition-all duration-700"
+                  style={{ width: events.length > 0 ? "100%" : "0%" }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Severity Legend */}
+          <div className="glass-panel p-6 rounded-3xl border border-outline-variant/10">
+            <h4 className="font-headline font-bold text-on-surface flex items-center gap-2 mb-5">
+              <span className="material-symbols-outlined text-sm">legend_toggle</span>
+              Severity Guide
+            </h4>
+            <div className="space-y-3">
+              {(["critical", "high", "medium", "low"] as Severity[]).map((s) => {
+                const cfg = SEVERITY_CONFIG[s];
+                return (
+                  <div key={s} className="flex items-center gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${cfg.dot} shrink-0`} />
+                    <span className={`text-xs font-bold uppercase tracking-wider ${cfg.color}`}>{s}</span>
+                    <span className="text-[10px] text-on-surface-variant ml-auto">
+                      {s === "critical" && "Immediate action required"}
+                      {s === "high" && "50+ upvotes or 100+ affected"}
+                      {s === "medium" && "5+ upvotes"}
+                      {s === "low" && "Newly reported"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Map snippet — kept from original design, static */}
+          <div className="glass-panel rounded-3xl overflow-hidden border border-outline-variant/10">
+            <div className="h-36 relative">
+              <div
+                className="absolute inset-0 bg-slate-900"
+                style={{
+                  backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCHtudNTG3bsKSO6Yb7icn7UOKxzHBwnD-OGpJwxhysZxlRUVJrmD4aPSLlBwXTMygSydjmKiByo3EU2nkuwpxpMGOTbH8E7kaadaOSOX74P7Br7k7MMLW9MkhepLz3xGHE8H7vfyJ35kM8TS0lX-GiMf75hS3BmrlxQdJyZyCB4VXfPYlRNdVHi7uqinx7RoB1tFRm5Anoax7PNtUZf_k8aYKoT36xJGPwhbbtdfTJaVx1i8EZxT5FI8ZeI5KUR_z_rMwC0bd_UcI')",
+                  backgroundSize: "cover",
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative">
+                  <div className="absolute w-8 h-8 bg-secondary/20 rounded-full animate-ping -left-2 -top-2" />
+                  <div className="w-4 h-4 bg-secondary rounded-full border-2 border-white/20 animate-pulse" />
+                </div>
+              </div>
+              <div className="absolute bottom-3 left-4">
                 <span className="text-[10px] font-bold text-secondary uppercase bg-secondary/10 backdrop-blur-md px-2 py-1 rounded border border-secondary/20 tracking-widest flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span> Live Activity Map
+                  <span className="w-1.5 h-1.5 rounded-full bg-secondary" /> Live Activity Map
                 </span>
               </div>
             </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Network Stability</span>
-                  <span className="text-sm font-headline font-bold text-secondary tracking-tighter">98.2%</span>
-                </div>
-                <div className="w-full bg-surface-container-low h-1 rounded-full overflow-hidden">
-                  <div className="bg-secondary h-full" style={{ width: "98.2%" }}></div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Power Efficiency</span>
-                  <span className="text-sm font-headline font-bold text-primary tracking-tighter">104 kW/h</span>
-                </div>
-                <div className="w-full bg-surface-container-low h-1 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full shadow-[0_0_10px_rgba(199,153,255,0.5)]" style={{ width: "72%" }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Alerts Quick List */}
-          <div className="glass-panel p-6 rounded-3xl border border-outline-variant/10">
-            <h4 className="font-headline font-bold text-slate-300 mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">history</span>
-              Signal History
-            </h4>
-            <div className="space-y-6">
-              <div className="flex gap-4 items-center">
-                <div className="w-2 h-2 rounded-full bg-primary glow-border-primary animate-pulse-dot"></div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-slate-200">Door Alarm Triggered</p>
-                  <p className="text-[10px] text-slate-500">Physics Lab A - False Alarm</p>
-                </div>
-                <span className="text-[9px] text-primary font-bold font-mono">JUST NOW</span>
-              </div>
-              <div className="flex gap-4 items-center">
-                <div className="w-2 h-2 rounded-full bg-secondary"></div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-slate-200">Bio-Metric Sync Success</p>
-                  <p className="text-[10px] text-slate-500">Security Gate North</p>
-                </div>
-                <span className="text-[9px] text-slate-600 font-mono">2m AGO</span>
-              </div>
-              <div className="flex gap-4 items-center">
-                <div className="w-2 h-2 rounded-full bg-error"></div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-slate-200">Thermal Threshold Warning</p>
-                  <p className="text-[10px] text-slate-500">Main Server Room</p>
-                </div>
-                <span className="text-[9px] text-slate-600 font-mono">11m AGO</span>
-              </div>
-              <div className="flex gap-4 items-center">
-                <div className="w-2 h-2 rounded-full bg-primary opacity-50"></div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-slate-200">HVAC Filter Alert</p>
-                  <p className="text-[10px] text-slate-500">Dormitory Block C</p>
-                </div>
-                <span className="text-[9px] text-slate-600 font-mono">47m AGO</span>
-              </div>
-            </div>
-            <button className="w-full mt-8 py-3 glass-panel border border-outline-variant/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary hover:border-primary/40 transition-all">
-              Open Full Logs
-            </button>
-          </div>
-
-          {/* Weather/Atmosphere Small Card */}
-          <div className="glass-panel p-6 rounded-3xl border border-primary/10 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Atmosphere</p>
-              <p className="text-2xl font-headline font-bold text-on-background tracking-tighter">24°C <span className="text-slate-500 text-sm font-light">Partly Clouded</span></p>
-            </div>
-            <span className="material-symbols-outlined text-primary text-4xl">cloud_queue</span>
           </div>
         </div>
       </div>
