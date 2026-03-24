@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Complaints | Pulse Observatory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed-dim": "#af7aef",
+                        "outline": "#717583",
+                        "on-tertiary-fixed-variant": "#3701b3",
+                        "error-dim": "#d73357",
+                        "tertiary-container": "#8269fe",
+                        "surface-container-lowest": "#000000",
+                        "on-secondary": "#005b51",
+                        "background": "#0a0e19",
+                        "on-tertiary": "#1f006f",
+                        "on-error": "#490013",
+                        "on-primary-container": "#340064",
+                        "tertiary-fixed": "#b2a5ff",
+                        "primary": "#c799ff",
+                        "on-background": "#e8eafb",
+                        "tertiary-fixed-dim": "#a595ff",
+                        "on-tertiary-container": "#000000",
+                        "surface-bright": "#262c3d",
+                        "secondary-dim": "#33e9d5",
+                        "surface": "#0a0e19",
+                        "error": "#ff6e84",
+                        "surface-container-low": "#0f131f",
+                        "on-primary": "#440080",
+                        "primary-container": "#bc87fe",
+                        "on-secondary-container": "#dcfff8",
+                        "surface-container-highest": "#202535",
+                        "on-secondary-fixed": "#00463f",
+                        "surface-variant": "#202535",
+                        "secondary-container": "#006a60",
+                        "on-error-container": "#ffb2b9",
+                        "tertiary": "#9f8eff",
+                        "inverse-on-surface": "#515562",
+                        "error-container": "#a70138",
+                        "secondary-fixed": "#4af8e3",
+                        "on-tertiary-fixed": "#170059",
+                        "secondary": "#4af8e3",
+                        "tertiary-dim": "#755bf0",
+                        "secondary-fixed-dim": "#33e9d5",
+                        "on-secondary-fixed-variant": "#00655b",
+                        "on-surface-variant": "#a7aaba",
+                        "surface-dim": "#0a0e19",
+                        "surface-container-high": "#1a1f2e",
+                        "outline-variant": "#444855",
+                        "inverse-surface": "#faf8ff",
+                        "on-primary-fixed": "#000000",
+                        "on-surface": "#e8eafb",
+                        "primary-fixed": "#bc87fe",
+                        "inverse-primary": "#7744b5",
+                        "primary-dim": "#ba85fb",
+                        "surface-container": "#141927",
+                        "surface-tint": "#c799ff",
+                        "on-primary-fixed-variant": "#40007a"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(32, 37, 53, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .glow-error { box-shadow: 0 0 20px -5px rgba(255, 110, 132, 0.4); }
+        .glow-warning { box-shadow: 0 0 20px -5px rgba(178, 165, 255, 0.4); }
+        .glow-success { box-shadow: 0 0 20px -5px rgba(74, 248, 227, 0.4); }
+        
+        .card-interaction-hover {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .card-interaction-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(199, 153, 255, 0.15);
+        }
+        .reaction-tooltip {
+            position: relative;
+        }
+        .reaction-tooltip::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 6px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            white-space: nowrap;
+            z-index: 50;
+        }
+        .reaction-tooltip:hover::before {
+            opacity: 1;
+            visibility: visible;
+            bottom: 110%;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 selection:text-primary overflow-x-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 z-40 bg-slate-950/40 backdrop-blur-2xl shadow-2xl shadow-purple-900/20 flex flex-col pt-20 pb-8 px-4 font-['Manrope'] font-medium text-sm">
+<div class="mb-10 px-4">
+<h1 class="font-['Space_Grotesk'] uppercase tracking-widest text-purple-200 text-lg">Observatory</h1>
+<p class="text-slate-500 text-xs mt-1">Campus Live Feed</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-slate-500 hover:text-slate-300 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-slate-500 hover:text-slate-300 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span>Live Map</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-purple-400 border-r-2 border-purple-500 bg-purple-500/10 shadow-[inset_-10px_0_20px_-10px_rgba(199,153,255,0.2)]" href="#">
+<span class="material-symbols-outlined" data-icon="report_problem">report_problem</span>
+<span>Complaints</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-slate-500 hover:text-slate-300 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+<span>Events</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-slate-500 hover:text-slate-300 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span>Activity</span>
+</a>
+</nav>
+<div class="mt-auto px-4">
+<button class="w-full bg-error-container text-on-error-container py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all duration-200 shadow-lg shadow-error/20">
+<span class="material-symbols-outlined text-sm" data-icon="emergency">emergency</span>
+                Emergency Alert
+            </button>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-900/60 backdrop-blur-xl flex justify-between items-center px-6 py-3 shadow-[0_0_40px_-15px_rgba(199,153,255,0.3)] font-['Space_Grotesk'] tracking-tight">
+<div class="flex items-center gap-8 pl-64">
+<span class="text-xl font-bold bg-gradient-to-r from-purple-400 to-fuchsia-500 bg-clip-text text-transparent">Pulse Observatory</span>
+<div class="hidden md:flex items-center bg-surface-container-lowest rounded-full px-4 py-1.5 border border-outline-variant/20">
+<span class="material-symbols-outlined text-slate-400 text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-64 text-on-surface" placeholder="Search incidents..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-400 hover:bg-white/5 rounded-full transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-white/5 rounded-full transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-primary/20">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaWK-Cz1Baj-DhSh2yHiDtrd1oQwmQKHNurXf_U-VuKu52wlry4aSiEkr9JpHkSJ92CRs8FCDW4UkDy-6XOvT5FQI-lRRo4derS-UZEdtCzDDOwleAm3JcofzzljYZBGrr2DrNVvBCVEcyw0W_cxr2X33EVAFRfulSYqxRRVc18A6L575EcntvgWVpK5v8JMvBgpQeVoNuedcgZ92cKxiwGzwXHxGZk6SG-wsIFvx1HhQsocAN8gPUB-J6w_muuZycM_IQPsph0dQ"/>
+</div>
+</div>
+<div class="absolute bottom-0 left-0 w-full bg-gradient-to-b from-purple-500/10 to-transparent h-[1px]"></div>
+</header>
+<!-- Main Content -->
+<main class="pl-72 pr-8 pt-28 pb-12 min-h-screen">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="text-4xl font-headline font-bold text-on-surface mb-2">Campus Grievances</h2>
+<p class="text-on-surface-variant font-medium">Real-time status of reported issues across the ecosystem.</p>
+</div>
+<button class="flex items-center gap-2 bg-gradient-to-br from-primary to-primary-container text-on-primary-container px-6 py-3.5 rounded-full font-headline font-bold text-sm tracking-wide shadow-[0_0_30px_-5px_rgba(199,153,255,0.5)] active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                REPORT ISSUE
+            </button>
+</div>
+<!-- Filters Bar -->
+<div class="flex flex-wrap items-center gap-4 mb-8">
+<div class="flex bg-surface-container-high p-1 rounded-full">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary font-bold text-xs tracking-wider">TRENDING</button>
+<button class="px-6 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-bold text-xs tracking-wider transition-colors">RECENT</button>
+<button class="px-6 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-bold text-xs tracking-wider transition-colors">MY REPORTS</button>
+</div>
+<div class="h-8 w-[1px] bg-outline-variant/30 mx-2"></div>
+<button class="flex items-center gap-2 px-5 py-2 rounded-full border border-outline-variant/30 text-on-surface-variant hover:bg-surface-variant/30 transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="location_on">location_on</span>
+<span class="text-xs font-bold tracking-widest uppercase">All Sectors</span>
+<span class="material-symbols-outlined text-lg" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<!-- Complaints Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+<!-- Top Issue Emphasized -->
+<div class="xl:col-span-8 group">
+<div class="glass-panel p-8 rounded-[2.5rem] border-[3px] border-error/40 relative overflow-hidden card-interaction-hover bg-gradient-to-br from-error/10 via-surface-container/50 to-surface-container shadow-2xl shadow-error/10">
+<div class="absolute top-0 right-0 p-6">
+<div class="bg-error text-on-error px-4 py-2 rounded-full flex items-center gap-2 shadow-lg shadow-error/40 animate-pulse">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-on-error opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-on-error"></span>
+</span>
+<span class="text-xs font-black tracking-tighter uppercase">URGENT PRIORITY</span>
+</div>
+</div>
+<div class="flex items-start gap-8 mb-8">
+<div class="p-6 rounded-[2rem] bg-error text-on-error flex-shrink-0 shadow-2xl shadow-error/30">
+<span class="material-symbols-outlined text-4xl" data-icon="wifi_off">wifi_off</span>
+</div>
+<div>
+<span class="text-[10px] font-bold tracking-widest text-error uppercase mb-2 block">CRITICAL ALERT • DORMITORY A</span>
+<h3 class="text-4xl font-headline font-bold mb-4">Total Network Outage: Sector 4</h3>
+<p class="text-on-surface-variant leading-relaxed text-lg">
+<span class="text-primary font-bold">Summary from multiple reports:</span> Multiple students indicate a physical line break near the main router hub. This is currently affecting <span class="text-on-surface font-bold">450 residents</span> since 02:00 AM.
+                            </p>
+</div>
+</div>
+<!-- Interactions Row -->
+<div class="flex flex-wrap items-center justify-between gap-6 pt-8 border-t border-outline-variant/20">
+<div class="flex items-center gap-8">
+<!-- Large Upvote -->
+<button class="flex items-center gap-4 px-10 py-5 rounded-2xl bg-primary text-on-primary font-bold transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_-5px_rgba(199,153,255,0.8)]">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+<span class="text-2xl">342</span>
+</button>
+<!-- Badge -->
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Impact Level</span>
+<span class="text-lg font-black uppercase tracking-tight text-on-surface"><span class="text-error">450</span> STUDENTS AFFECTED</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<!-- Reactions -->
+<div class="flex gap-4 bg-surface-container-lowest/80 p-3 rounded-2xl border border-outline-variant/20 shadow-inner">
+<button class="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Anger">😡</button>
+<button class="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Urgent">⚠️</button>
+<button class="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Support">👍</button>
+</div>
+<!-- Avatars -->
+<div class="flex flex-col items-end gap-2">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Recent Activity</span>
+<div class="flex -space-x-4">
+<img class="w-11 h-11 rounded-full border-2 border-surface shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0zq3pct0kuCwIhrTygGEzjvywZQWfXuqbPlDaVKHUW7V_v2KWGTxR2J2u1iW8n5Q4uABfCQDRtU3UFR_0GB12zDsqA1yIvoIuYECbXMl8LERNsQEhVfkh-oaM7oBdgF-oyLkyOcw-OzsbB-ZPePUCt2HbYr3kSI6k67X-w-SFYF3_0aeC4mBA7VKG1HYpJNh9LAUuDEIhzFwr5HiYHXebguR745APJcxp7E5bYXYpeekX7w4zBTqthBpFzmgcnbnwxfpS3c8CHug"/>
+<img class="w-11 h-11 rounded-full border-2 border-surface shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_mLGqUdubLbXvcbCkdYYPwDAcHIwXI3cs8EFM4P6QW_dHwe_v5jqC60GLkd3OGuzwPTd9QMxOqZf7lMH58ZtQKSlJTD4ZP8zrD0044vmxw7bD57sfDPSCiyg_VSIXhGleRdEh2Six7cYnSbM9_Tt-L6iwI-5Nvz7MkH0x28vpzMTAGYPLzGX3GN3YsfixRAO3yTOwH8aNG4fZ53RbDByLx9nTRWBfe_NGgnkZU-a4u_p3DDccOjFW8Son7jqc2-JbXafbzaXRNco"/>
+<img class="w-11 h-11 rounded-full border-2 border-surface shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChkrgjDFRIdY7qPNn11jy3fJeR2zAtFwFOhbp2WU03ZoN64Bk7rQ97dMNLO2XZ2n2onX3hT_2MSEb1M-pJ83rhXaXaIlBYa1S14Au3eRgtcXMRUu9TKsh9ZcbnmGwZ9GbO1rzSk75lPGfcZqTiQq8O3phAVZ1XgYdH3cnBEkm-M4QcPqHFecJ8g3TbcdNFaLL7bMAD01Sv9X5pI7a6ZQZucIiQSGPwsCuNlhpdAdPahgA4jxSBPhmAVjdLV_0o3owV9V8XGA0T1KI"/>
+<div class="w-11 h-11 rounded-full bg-surface-container-highest flex items-center justify-center text-xs font-bold border-2 border-surface text-on-surface shadow-md">+342</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Stats Module -->
+<div class="xl:col-span-4 grid grid-cols-1 gap-6">
+<div class="glass-panel p-6 rounded-[2rem] border border-outline-variant/10 flex flex-col justify-between">
+<div>
+<span class="text-[10px] font-bold tracking-widest text-secondary uppercase mb-4 block">LIVE STATUS</span>
+<div class="flex items-baseline gap-2">
+<span class="text-5xl font-headline font-bold">12</span>
+<span class="text-on-surface-variant text-sm">Active Issues</span>
+</div>
+</div>
+<div class="mt-4 h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-error via-tertiary to-secondary w-3/4"></div>
+</div>
+<div class="mt-4 flex justify-between text-[10px] font-bold text-on-surface-variant">
+<span>4 CRITICAL</span>
+<span>8 PENDING</span>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-[2rem] border border-outline-variant/10 bg-primary/5">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="auto_awesome">auto_awesome</span>
+<h4 class="font-headline font-bold text-sm tracking-wide">Pulse Insight</h4>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+<span class="font-bold text-primary">Summary from multiple reports:</span> 85% of electrical complaints are concentrated in the South Wing. An automated inspection ticket has been generated for the infrastructure team.
+                    </p>
+</div>
+</div>
+<!-- List Issue 2 -->
+<div class="xl:col-span-4">
+<div class="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
+<div class="flex justify-between items-start mb-6">
+<div class="p-4 rounded-2xl bg-tertiary/20 text-tertiary shadow-lg shadow-tertiary/10">
+<span class="material-symbols-outlined text-2xl" data-icon="ac_unit">ac_unit</span>
+</div>
+<div class="bg-tertiary-fixed/10 text-tertiary-fixed px-3 py-1.5 rounded-full text-[10px] font-black border border-tertiary-fixed/30 uppercase tracking-widest">In Progress</div>
+</div>
+<h4 class="text-xl font-headline font-bold mb-3 group-hover:text-tertiary transition-colors">Library HVAC Malfunction</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">
+<span class="text-tertiary/80 font-semibold">Summary from multiple reports:</span> The 3rd floor reading room temperature has reached 28°C. Reports indicate a potential compressor failure.
+                    </p>
+<div class="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<button class="flex items-center gap-3 px-6 py-3 rounded-xl bg-tertiary/10 hover:bg-tertiary/20 text-tertiary transition-all shadow-lg shadow-tertiary/5 border border-tertiary/20">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+<span class="text-lg font-bold">88</span>
+</button>
+<span class="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">88 STUDENTS AFFECTED</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex gap-2 bg-black/20 p-1.5 rounded-lg">
+<button class="reaction-tooltip text-lg hover:scale-110" data-tooltip="Frustrated">😡</button>
+<button class="reaction-tooltip text-lg hover:scale-110" data-tooltip="Warning">⚠️</button>
+</div>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-surface bg-slate-400"></div>
+<div class="w-6 h-6 rounded-full border border-surface bg-slate-500"></div>
+</div>
+</div>
+<button class="text-primary text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4">VIEW THREAD</button>
+</div>
+</div>
+</div>
+</div>
+<!-- List Issue 3 -->
+<div class="xl:col-span-4">
+<div class="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
+<div class="flex justify-between items-start mb-6">
+<div class="p-4 rounded-2xl bg-secondary/20 text-secondary shadow-lg shadow-secondary/10">
+<span class="material-symbols-outlined text-2xl" data-icon="water_drop">water_drop</span>
+</div>
+<div class="bg-secondary/10 text-secondary px-3 py-1.5 rounded-full text-[10px] font-black border border-secondary/30 uppercase tracking-widest">Scheduled</div>
+</div>
+<h4 class="text-xl font-headline font-bold mb-3 group-hover:text-secondary transition-colors">Cafeteria Water Cooler Filter</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">
+<span class="text-secondary/80 font-semibold">Summary from multiple reports:</span> Maintenance scheduled for tomorrow at 10:00 AM. Routine replacement cycle exceeded.
+                    </p>
+<div class="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<button class="flex items-center gap-3 px-6 py-3 rounded-xl bg-secondary/10 hover:bg-secondary/20 text-secondary transition-all shadow-lg shadow-secondary/5 border border-secondary/20">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+<span class="text-lg font-bold">12</span>
+</button>
+<span class="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">12 STUDENTS AFFECTED</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex gap-2 bg-black/20 p-1.5 rounded-lg">
+<button class="reaction-tooltip text-lg hover:scale-110" data-tooltip="Good Luck">👍</button>
+</div>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-surface bg-slate-600"></div>
+</div>
+</div>
+<button class="text-primary text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4">VIEW THREAD</button>
+</div>
+</div>
+</div>
+</div>
+<!-- List Issue 4 -->
+<div class="xl:col-span-4">
+<div class="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
+<div class="flex justify-between items-start mb-6">
+<div class="p-4 rounded-2xl bg-error/20 text-error shadow-lg shadow-error/10">
+<span class="material-symbols-outlined text-2xl" data-icon="security">security</span>
+</div>
+<div class="bg-error/10 text-error px-3 py-1.5 rounded-full text-[10px] font-black border border-error/30 uppercase tracking-widest">New Report</div>
+</div>
+<h4 class="text-xl font-headline font-bold mb-3 group-hover:text-error transition-colors">Shattered Glass - Gym Entry</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">
+<span class="text-error/80 font-semibold">Summary from multiple reports:</span> Safety hazard identified at Main Gym Entrance. Reported by 5 students in the last 10 minutes.
+                    </p>
+<div class="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<button class="flex items-center gap-3 px-6 py-3 rounded-xl bg-error/10 hover:bg-error/20 text-error transition-all shadow-lg shadow-error/5 border border-error/20">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+<span class="text-lg font-bold">45</span>
+</button>
+<span class="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">45 STUDENTS AFFECTED</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex gap-2 bg-black/20 p-1.5 rounded-lg">
+<button class="reaction-tooltip text-lg hover:scale-110" data-tooltip="Hazardous">⚠️</button>
+</div>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-surface bg-slate-300"></div>
+<div class="w-6 h-6 rounded-full border border-surface bg-slate-700"></div>
+</div>
+</div>
+<button class="text-primary text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4">VIEW THREAD</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="mt-20 flex justify-center">
+<button class="group flex flex-col items-center gap-2">
+<span class="text-[10px] font-black tracking-[0.4em] uppercase text-on-surface-variant group-hover:text-primary transition-colors">Load History</span>
+<span class="material-symbols-outlined text-primary group-hover:translate-y-2 transition-transform duration-300" data-icon="keyboard_double_arrow_down">keyboard_double_arrow_down</span>
+</button>
+</div>
+</main>
+<!-- Background Atmospheric Glows -->
+<div class="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -z-10"></div>
+<div class="fixed bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-tertiary/5 rounded-full blur-[100px] -z-10"></div>
+<div class="fixed top-[40%] left-[-5%] w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px] -z-10"></div>
+</body></html>
