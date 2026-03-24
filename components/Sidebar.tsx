@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   const navLinks = [
     { name: "Dashboard", href: "/dashboard", icon: "dashboard" },
@@ -39,9 +41,26 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="mt-auto px-2">
-        <button className="w-full py-3 bg-error-container text-on-error-container rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-error/20 hover:scale-[1.02] active:scale-95 transition-all">
-          Emergency Alert
+
+      {/* User info + logout */}
+      <div className="mt-auto px-2 space-y-3">
+        {user && (
+          <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5 border border-white/5">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-primary text-sm">person</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-slate-300 truncate">{user.displayName || "User"}</p>
+              <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={logout}
+          className="w-full py-3 flex items-center justify-center gap-2 bg-error-container text-on-error-container rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-error/20 hover:scale-[1.02] active:scale-95 transition-all"
+        >
+          <span className="material-symbols-outlined text-sm">logout</span>
+          Sign Out
         </button>
       </div>
     </aside>
