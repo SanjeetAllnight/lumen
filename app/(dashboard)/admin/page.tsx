@@ -110,7 +110,7 @@ export default function AdminIntelligencePage() {
   const toggleSelection = (id: string) => {
     setSelectedIssueIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
-  
+
   const handleBulkAction = async (status: Issue["status"]) => {
     if (selectedIssueIds.length === 0) return;
     setIsProcessingBulk(true);
@@ -126,10 +126,11 @@ export default function AdminIntelligencePage() {
   };
 
   return (
-    <div className="px-8 pb-32 w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-      
-      {/* Top Header & Live Indicators */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+    <div className="px-8 pb-12 w-full max-w-7xl mx-auto space-y-12">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary glow-primary">
+          <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
+        </div>
         <div>
           <div className="flex items-center gap-3 mb-2">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
@@ -247,7 +248,7 @@ export default function AdminIntelligencePage() {
                       </div>
                       <h3 className="font-headline font-bold text-on-surface text-lg mb-1">{issue.title}</h3>
                       <p className="text-xs text-on-surface-variant mb-4 line-clamp-2">{issue.aiSummary || issue.description}</p>
-                      
+
                       <div className="flex flex-col gap-1 mb-6">
                         <span className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Location</span>
                         <span className="text-xs text-on-surface font-medium truncate flex items-center gap-1">
@@ -301,9 +302,9 @@ export default function AdminIntelligencePage() {
                             </>
                           )}
                           {(issue.status === "resolved" || issue.status === "dismissed") && (
-                             <button onClick={() => handleQuickStatus(issue.id, "reported")} className="flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-white/10 text-on-surface-variant rounded-lg text-xs font-bold transition-colors border border-white/10">
-                               <span className="material-symbols-outlined text-[16px]">undo</span> Reopen
-                             </button>
+                            <button onClick={() => handleQuickStatus(issue.id, "reported")} className="flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-white/10 text-on-surface-variant rounded-lg text-xs font-bold transition-colors border border-white/10">
+                              <span className="material-symbols-outlined text-[16px]">undo</span> Reopen
+                            </button>
                           )}
                         </div>
                       )}
@@ -337,12 +338,12 @@ export default function AdminIntelligencePage() {
               pendingEvents.map((evt) => (
                 <div key={evt.id} className="glass-panel rounded-2xl p-6 border border-white/5 flex flex-col md:flex-row gap-6 relative overflow-hidden group items-center">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
-                  
+
                   <div className="flex-1 min-w-0 z-10">
                     <div className="flex items-center gap-3 mb-2">
-                       <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest px-2.5 py-1 bg-purple-500/10 rounded-md border border-purple-500/20">
-                         {evt.category || "General"}
-                       </span>
+                      <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest px-2.5 py-1 bg-purple-500/10 rounded-md border border-purple-500/20">
+                        {evt.category || "General"}
+                      </span>
                     </div>
                     <h3 className="font-headline font-bold text-on-surface text-xl mb-2 truncate">{evt.title}</h3>
                     <p className="text-sm text-on-surface-variant mb-4 line-clamp-2">{evt.description}</p>

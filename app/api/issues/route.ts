@@ -36,7 +36,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { title, description, location, category } = body;
+    const { title, description, location, category, authorName } = body;
 
     if (!title || !description) {
       return NextResponse.json(
@@ -54,10 +54,15 @@ export async function POST(req: NextRequest) {
       aiSummary,
       location: location || "Unknown",
       category: category || "General",
+      authorName: authorName || "Student Reporter",
       upvotes: 0,
+<<<<<<< HEAD
       affectedCount: 1,
       status: "reported",
       updates: [],
+=======
+      status: "reported",
+>>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
       createdAt: Timestamp.now(),
     };
 

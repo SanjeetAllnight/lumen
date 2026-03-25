@@ -85,7 +85,11 @@ export default function Sidebar() {
           </div>
         )}
         <button
-          onClick={logout}
+          onClick={() => {
+            if (window.confirm("Are you sure you want to sign out?")) {
+              logout();
+            }
+          }}
           className="w-full py-3 flex items-center justify-center gap-2 bg-error-container text-on-error-container rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-error/20 hover:scale-[1.02] active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-sm">logout</span>

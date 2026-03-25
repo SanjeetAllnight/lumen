@@ -1,29 +1,177 @@
 "use client";
 
-import Link from 'next/link';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+<<<<<<< HEAD
 import { useGlobal, getStatusConfig } from '@/components/GlobalProvider';
 import { IssueListSkeleton, EmptyIssues } from '@/components/Skeletons';
+=======
+import { useGlobal, type Issue } from '@/components/GlobalProvider';
+import { useAuth } from '@/components/AuthProvider';
+import { IssueListSkeleton } from '@/components/Skeletons';
+
+type Tab = "trending" | "recents" | "my";
+type RecentsOrder = "newest" | "oldest";
+
+const LOCATIONS = [
+  "All Locations",
+  "Computer Dept", "IT Dept", "Civil Dept", "ETC Dept", "ENE Dept",
+  "Mech Dept", "Library", "Canteen", "Main Gate", "Admin Block",
+  "Academic Block", "Mining Dept", "Hostel", "Ground",
+];
+
+function statusColor(status: string) {
+  if (status === "resolved") return "text-secondary bg-secondary/10 border-secondary/30";
+  if (status === "in_progress") return "text-primary bg-primary/10 border-primary/30";
+  return "text-error bg-error/10 border-error/30";
+}
+
+function statusLabel(status: string) {
+  if (status === "resolved") return "Resolved";
+  if (status === "in_progress") return "In Progress";
+  return "Reported";
+}
+
+function timeAgo(dateString: string | null | undefined): string {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return "";
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+function IssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.MouseEvent) => void }) {
+  const router = useRouter();
+  return (
+    <div
+      onClick={() => router.push(`/issue/${issue.id}`)}
+      className="glass-panel p-6 rounded-[2rem] border border-outline-variant/15 bg-surface-container/30 hover:border-primary/25 hover:bg-surface-container/50 transition-all duration-300 cursor-pointer flex flex-col h-full group"
+    >
+      <div className="flex justify-between items-start mb-4">
+        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
+          {statusLabel(issue.status)}
+        </span>
+        <span className="text-[10px] text-on-surface-variant/60">{timeAgo(issue.createdAt)}</span>
+      </div>
+      <h4 className="text-base font-headline font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{issue.title}</h4>
+      <p className="text-xs text-on-surface-variant leading-relaxed flex-1 line-clamp-3">{issue.aiSummary || issue.description}</p>
+      <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+        <button
+          onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:scale-95"
+        >
+          <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
+          <span className="text-sm font-bold">{issue.upvotes}</span>
+        </button>
+        <div className="flex items-center gap-2 text-on-surface-variant text-[11px]">
+          <span className="material-symbols-outlined text-sm">location_on</span>
+          <span className="font-medium">{issue.location}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopIssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.MouseEvent) => void }) {
+  const router = useRouter();
+  return (
+    <div
+      onClick={() => router.push(`/issue/${issue.id}`)}
+      className="glass-panel p-8 rounded-[2.5rem] border-2 border-error/30 bg-gradient-to-br from-error/8 via-surface-container/50 to-surface-container shadow-xl shadow-error/10 cursor-pointer hover:border-error/50 transition-all duration-300 group"
+    >
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-2 bg-error text-on-error px-3 py-1.5 rounded-full shadow-lg shadow-error/30">
+          <span className="w-2 h-2 rounded-full bg-on-error animate-ping" />
+          <span className="text-[10px] font-black uppercase tracking-wider">Urgent Priority</span>
+        </div>
+        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
+          {statusLabel(issue.status)}
+        </span>
+      </div>
+      <h3 className="text-3xl font-headline font-bold mb-3 leading-tight group-hover:text-error/90 transition-colors">{issue.title}</h3>
+      <p className="text-on-surface-variant leading-relaxed mb-6 text-sm line-clamp-3">{issue.aiSummary || issue.description}</p>
+      <div className="flex items-center justify-between pt-6 border-t border-outline-variant/20">
+        <button
+          onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
+          className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-primary text-on-primary font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/30"
+        >
+          <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
+          <span className="text-xl">{issue.upvotes}</span>
+        </button>
+        <div className="flex items-center gap-2 text-on-surface-variant text-sm">
+          <span className="material-symbols-outlined text-base">location_on</span>
+          <span className="font-medium">{issue.location}</span>
+          <span className="mx-2 text-outline-variant">·</span>
+          <span>{timeAgo(issue.createdAt)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+>>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
 
 export default function ComplaintsPage() {
-  const router = useRouter();
   const { issues, upvoteIssue, isLoading } = useGlobal();
+  const { user } = useAuth();
+  const [tab, setTab] = useState<Tab>("trending");
+  const [recentsOrder, setRecentsOrder] = useState<RecentsOrder>("newest");
+  const [locationFilter, setLocationFilter] = useState("All Locations");
+  const [locationOpen, setLocationOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const issue1 = issues.find(i => i.id === "network-sector-4") || issues[3];
-  const issue2 = issues.find(i => i.id === "library-hvac") || issues[4];
-  const issue3 = issues.find(i => i.id === "water-cooler") || issues[5];
-  const issue4 = issues.find(i => i.id === "gym-glass") || issues[6];
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setLocationOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-  const newIssues = issues.filter(i => i.isNew);
+  const filteredByLocation = useMemo(() =>
+    locationFilter === "All Locations" ? issues : issues.filter(i => i.location === locationFilter),
+    [issues, locationFilter]
+  );
+
+  const trendingIssues = useMemo(() =>
+    [...filteredByLocation].sort((a, b) => b.upvotes - a.upvotes),
+    [filteredByLocation]
+  );
+
+  const recentIssues = useMemo(() => {
+    const sorted = [...filteredByLocation].sort((a, b) => {
+      const ta = new Date(a.createdAt || 0).getTime();
+      const tb = new Date(b.createdAt || 0).getTime();
+      return recentsOrder === "newest" ? tb - ta : ta - tb;
+    });
+    return sorted;
+  }, [filteredByLocation, recentsOrder]);
+
+  const myIssues = useMemo(() =>
+    filteredByLocation.filter(i => i.authorName === user?.displayName),
+    [filteredByLocation, user]
+  );
+
+  const displayIssues: Issue[] = tab === "trending" ? trendingIssues : tab === "recents" ? recentIssues : myIssues;
+  const topIssue = tab === "trending" ? trendingIssues[0] : undefined;
+  const restIssues = tab === "trending" ? trendingIssues.slice(1) : displayIssues;
+
+  const handleUpvote = (id: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    upvoteIssue(id);
+  };
 
   if (isLoading) {
     return (
       <div className="px-8 pb-12 w-full">
-        <div className="flex justify-between items-end mb-10">
-          <div>
-            <h2 className="text-4xl font-headline font-bold text-on-surface mb-2">Campus Grievances</h2>
-            <p className="text-on-surface-variant font-medium">Real-time status of reported issues across the ecosystem.</p>
-          </div>
+        <div className="mb-10">
+          <h2 className="text-4xl font-headline font-bold text-on-surface mb-2">Campus Grievances</h2>
+          <p className="text-on-surface-variant">Real-time status of reported issues across campus.</p>
         </div>
         <IssueListSkeleton count={5} />
       </div>
@@ -31,127 +179,120 @@ export default function ComplaintsPage() {
   }
 
   return (
-    <div className="px-8 pb-12 w-full">
-      {/* Header Section */}
-      <div className="flex justify-between items-end mb-10">
+    <div className="px-8 pb-16 w-full">
+      {/* Header */}
+      <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-4xl font-headline font-bold text-on-surface mb-2">Campus Grievances</h2>
-          <p className="text-on-surface-variant font-medium">Real-time status of reported issues across the ecosystem.</p>
+          <h2 className="text-4xl font-headline font-bold text-on-surface mb-1">Campus Grievances</h2>
+          <p className="text-on-surface-variant text-sm">
+            <span className="font-bold text-on-surface">{issues.length}</span> active issue{issues.length !== 1 ? "s" : ""} · Real-time data
+          </p>
         </div>
-        <button onClick={() => document.dispatchEvent(new Event('openReportModal'))} className="flex items-center gap-2 bg-gradient-to-br from-primary to-primary-container text-on-primary-container px-6 py-3.5 rounded-full font-headline font-bold text-sm tracking-wide shadow-[0_0_30px_-5px_rgba(199,153,255,0.5)] active:scale-95 transition-all">
-          <span className="material-symbols-outlined">add_circle</span>
-          REPORT ISSUE
+        <button
+          onClick={() => document.dispatchEvent(new Event("openReportModal"))}
+          className="flex items-center gap-2 bg-gradient-to-br from-primary to-primary-container text-on-primary px-5 py-3 rounded-full font-bold text-sm tracking-wide shadow-[0_0_30px_-5px_rgba(199,153,255,0.5)] active:scale-95 transition-all"
+        >
+          <span className="material-symbols-outlined text-base">add_circle</span>
+          Report Issue
         </button>
       </div>
 
       {/* Filters Bar */}
       <div className="flex flex-wrap items-center gap-4 mb-8">
-        <div className="flex bg-surface-container-high p-1 rounded-full">
-          <button className="px-6 py-2 rounded-full bg-primary text-on-primary font-bold text-xs tracking-wider">TRENDING</button>
-          <button className="px-6 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-bold text-xs tracking-wider transition-colors">RECENT</button>
-          <button className="px-6 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-bold text-xs tracking-wider transition-colors">MY REPORTS</button>
+        {/* Tabs */}
+        <div className="flex bg-surface-container-high p-1 rounded-full border border-white/5">
+          {(["trending", "recents", "my"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${
+                tab === t ? "bg-primary text-on-primary shadow-lg" : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              {t === "my" ? "My Reports" : t}
+            </button>
+          ))}
         </div>
-        <div className="h-8 w-[1px] bg-outline-variant/30 mx-2"></div>
-        <button className="flex items-center gap-2 px-5 py-2 rounded-full border border-outline-variant/30 text-on-surface-variant hover:bg-surface-variant/30 transition-all">
-          <span className="material-symbols-outlined text-lg">location_on</span>
-          <span className="text-xs font-bold tracking-widest uppercase">All Sectors</span>
-          <span className="material-symbols-outlined text-lg">expand_more</span>
-        </button>
+
+        {/* Recents Order toggle (only shown on Recents tab) */}
+        {tab === "recents" && (
+          <div className="flex bg-surface-container-high p-1 rounded-full border border-white/5">
+            <button
+              onClick={() => setRecentsOrder("newest")}
+              className={`px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all ${recentsOrder === "newest" ? "bg-white/15 text-on-surface" : "text-on-surface-variant"}`}
+            >
+              Newest First
+            </button>
+            <button
+              onClick={() => setRecentsOrder("oldest")}
+              className={`px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all ${recentsOrder === "oldest" ? "bg-white/15 text-on-surface" : "text-on-surface-variant"}`}
+            >
+              Oldest First
+            </button>
+          </div>
+        )}
+
+        <div className="h-6 w-[1px] bg-outline-variant/30 hidden sm:block" />
+
+        {/* Location Dropdown */}
+        <div ref={dropdownRef} className="relative">
+          <button
+            onClick={() => setLocationOpen(!locationOpen)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant/30 text-on-surface-variant hover:bg-surface-variant/20 transition-all text-xs font-bold uppercase tracking-widest"
+          >
+            <span className="material-symbols-outlined text-base">location_on</span>
+            <span>{locationFilter === "All Locations" ? "All Locations" : locationFilter}</span>
+            <span className="material-symbols-outlined text-base transition-transform" style={{ transform: locationOpen ? "rotate(180deg)" : "" }}>expand_more</span>
+          </button>
+
+          {locationOpen && (
+            <div className="absolute top-full mt-2 left-0 z-50 bg-surface-container-high border border-white/10 rounded-2xl shadow-2xl overflow-hidden min-w-[180px] py-2 animate-in fade-in slide-in-from-top-2 duration-150">
+              {LOCATIONS.map(loc => (
+                <button
+                  key={loc}
+                  onClick={() => { setLocationFilter(loc); setLocationOpen(false); }}
+                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors flex items-center justify-between gap-4 ${locationFilter === loc ? "text-primary font-bold" : "text-on-surface"}`}
+                >
+                  {loc}
+                  {locationFilter === loc && <span className="material-symbols-outlined text-sm text-primary">check</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Complaints Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        {/* Top Issue Emphasized */}
-        <div onClick={() => router.push('/issue/network-sector-4')} className="xl:col-span-8 group cursor-pointer">
-          <div className="glass-panel p-8 rounded-[2.5rem] border-[3px] border-error/40 relative overflow-hidden card-interaction-hover bg-gradient-to-br from-error/10 via-surface-container/50 to-surface-container shadow-2xl shadow-error/10">
-            <div className="absolute top-0 right-0 p-6">
-              <div className="bg-error text-on-error px-4 py-2 rounded-full flex items-center gap-2 shadow-lg shadow-error/40 animate-pulse">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-on-error opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-on-error"></span>
-                </span>
-                <span className="text-xs font-black tracking-tighter uppercase">URGENT PRIORITY</span>
-              </div>
-            </div>
-            <div className="flex items-start gap-8 mb-8">
-              <div className="p-6 rounded-[2rem] bg-error text-on-error flex-shrink-0 shadow-2xl shadow-error/30">
-                <span className="material-symbols-outlined text-4xl">wifi_off</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold tracking-widest text-error uppercase mb-2 block">CRITICAL ALERT • DORMITORY A</span>
-                <h3 className="text-4xl font-headline font-bold mb-4">Total Network Outage: Sector 4</h3>
-                <p className="text-on-surface-variant leading-relaxed text-lg">
-                  <span className="text-primary font-bold">Summary from multiple reports:</span> Multiple students indicate a physical line break near the main router hub. This is currently affecting <span className="text-on-surface font-bold">450 residents</span> since 02:00 AM.
-                </p>
-              </div>
-            </div>
-
-            {/* Interactions Row */}
-            <div className="flex flex-wrap items-center justify-between gap-6 pt-8 border-t border-outline-variant/20">
-              <div className="flex items-center gap-8">
-                {/* Large Upvote */}
-                <button onClick={(e) => { e.stopPropagation(); upvoteIssue("network-sector-4"); }} className="flex items-center gap-4 px-10 py-5 rounded-2xl bg-primary text-on-primary font-bold transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_-5px_rgba(199,153,255,0.8)]">
-                  <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-                  <span className="text-2xl">{issue1?.upvotes}</span>
-                </button>
-                {/* Badge */}
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Impact Level</span>
-                  <span className="text-lg font-black uppercase tracking-tight text-on-surface"><span className="text-error">{issue1?.affectedCount}</span> STUDENTS AFFECTED</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6">
-                {/* Reactions */}
-                <div className="flex gap-4 bg-surface-container-lowest/80 p-3 rounded-2xl border border-outline-variant/20 shadow-inner">
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Anger">!</button>
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Urgent">!!</button>
-                  <button className="reaction-tooltip text-2xl transition-all hover:-translate-y-2 hover:scale-125" data-tooltip="Support">+</button>
-                </div>
-                {/* Avatars */}
-                <div className="flex flex-col items-end gap-2">
-                  <span className="text-[10px] font-bold text-on-surface-variant uppercase">Recent Activity</span>
-                  <div className="flex -space-x-4">
-                    <img className="w-11 h-11 rounded-full border-2 border-surface shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0zq3pct0kuCwIhrTygGEzjvywZQWfXuqbPlDaVKHUW7V_v2KWGTxR2J2u1iW8n5Q4uABfCQDRtU3UFR_0GB12zDsqA1yIvoIuYECbXMl8LERNsQEhVfkh-oaM7oBdgF-oyLkyOcw-OzsbB-ZPePUCt2HbYr3kSI6k67X-w-SFYF3_0aeC4mBA7VKG1HYpJNh9LAUuDEIhzFwr5HiYHXebguR745APJcxp7E5bYXYpeekX7w4zBTqthBpFzmgcnbnwxfpS3c8CHug" alt="avatar" />
-                    <img className="w-11 h-11 rounded-full border-2 border-surface shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_mLGqUdubLbXvcbCkdYYPwDAcHIwXI3cs8EFM4P6QW_dHwe_v5jqC60GLkd3OGuzwPTd9QMxOqZf7lMH58ZtQKSlJTD4ZP8zrD0044vmxw7bD57sfDPSCiyg_VSIXhGleRdEh2Six7cYnSbM9_Tt-L6iwI-5Nvz7MkH0x28vpzMTAGYPLzGX3GN3YsfixRAO3yTOwH8aNG4fZ53RbDByLx9nTRWBfe_NGgnkZU-a4u_p3DDccOjFW8Son7jqc2-JbXafbzaXRNco" alt="avatar" />
-                    <img className="w-11 h-11 rounded-full border-2 border-surface shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChkrgjDFRIdY7qPNn11jy3fJeR2zAtFwFOhbp2WU03ZoN64Bk7rQ97dMNLO2XZ2n2onX3hT_2MSEb1M-pJ83rhXaXaIlBYa1S14Au3eRgtcXMRUu9TKsh9ZcbnmGwZ9GbO1rzSk75lPGfcZqTiQq8O3phAVZ1XgYdH3cnBEkm-M4QcPqHFecJ8g3TbcdNFaLL7bMAD01Sv9X5pI7a6ZQZucIiQSGPwsCuNlhpdAdPahgA4jxSBPhmAVjdLV_0o3owV9V8XGA0T1KI" alt="avatar" />
-                    <div className="w-11 h-11 rounded-full bg-surface-container-highest flex items-center justify-center text-xs font-bold border-2 border-surface text-on-surface shadow-md">+342</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Empty State */}
+      {displayIssues.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <span className="material-symbols-outlined text-6xl text-on-surface-variant/30 mb-4">inbox</span>
+          <p className="text-on-surface-variant text-lg font-semibold mb-2">
+            {tab === "my" ? "You haven't submitted any reports yet." : "No issues found."}
+          </p>
+          <p className="text-on-surface-variant/60 text-sm">
+            {tab === "my" ? "Hit the Report Issue button to get started." : "Try adjusting the location filter or check back later."}
+          </p>
         </div>
+      )}
 
-        {/* Stats Module */}
-        <div className="xl:col-span-4 grid grid-cols-1 gap-6">
-          <div className="glass-panel p-6 rounded-[2rem] border border-outline-variant/10 flex flex-col justify-between">
-            <div>
-              <span className="text-[10px] font-bold tracking-widest text-secondary uppercase mb-4 block">LIVE STATUS</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-headline font-bold">{issues.length}</span>
-                <span className="text-on-surface-variant text-sm">Active Issues</span>
-              </div>
-            </div>
-            <div className="mt-4 h-2 bg-surface-container rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-error via-tertiary to-secondary w-3/4"></div>
-            </div>
-            <div className="mt-4 flex justify-between text-[10px] font-bold text-on-surface-variant">
-              <span>4 CRITICAL</span>
-              <span>8 PENDING</span>
-            </div>
-          </div>
+      {/* Content Grid */}
+      {displayIssues.length > 0 && (
+        <div className="space-y-8">
+          {/* Top issue — full width for Trending */}
+          {topIssue && (
+            <TopIssueCard issue={topIssue} onUpvote={handleUpvote(topIssue.id)} />
+          )}
 
-          <div className="glass-panel p-6 rounded-[2rem] border border-outline-variant/10 bg-primary/5">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="material-symbols-outlined text-primary">auto_awesome</span>
-              <h4 className="font-headline font-bold text-sm tracking-wide">Lumen Insight</h4>
+          {/* Rest of issues */}
+          {restIssues.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {restIssues.map(issue => (
+                <IssueCard key={issue.id} issue={issue} onUpvote={handleUpvote(issue.id)} />
+              ))}
             </div>
-            <p className="text-xs text-on-surface-variant leading-relaxed">
-              <span className="font-bold text-primary">Summary from multiple reports:</span> 85% of electrical complaints are concentrated in the South Wing. An automated inspection ticket has been generated for the infrastructure team.
-            </p>
-          </div>
+          )}
         </div>
+<<<<<<< HEAD
 
         {/* List Issue 2 */}
         <div onClick={() => router.push('/issue/library-hvac')} className="xl:col-span-4 cursor-pointer">
@@ -310,6 +451,9 @@ export default function ComplaintsPage() {
           <span className="material-symbols-outlined text-primary group-hover:translate-y-2 transition-transform duration-300">keyboard_double_arrow_down</span>
         </button>
       </div>
+=======
+      )}
+>>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
     </div>
   );
 }

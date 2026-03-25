@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { useToast } from "./ToastProvider";
+import { useAuth } from "./AuthProvider";
 
 export type Comment = {
   id: string;
@@ -24,7 +25,7 @@ export type Issue = {
   technician?: string;
   updates?: { status: string; note: string; timestamp: string }[];
   upvotes: number;
-  affectedCount: number;
+  authorName?: string;
   createdAt: string;
   comments?: Comment[];
   isNew?: boolean;
@@ -58,7 +59,7 @@ type GlobalContextType = {
   isLoading: boolean;
   upvoteIssue: (id: string) => void;
   addComment: (issueId: string, content: string) => Promise<Comment | null>;
-  addIssue: (issue: Omit<Issue, "id" | "upvotes" | "affectedCount" | "createdAt" | "comments" | "isNew">) => Promise<void>;
+  addIssue: (issue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">) => Promise<void>;
   getIssue: (id: string) => Promise<Issue | null>;
   getComments: (issueId: string) => Promise<Comment[]>;
   addFeedback: (type: string, message: string) => void;
@@ -93,6 +94,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   const [activities, setActivities] = useState<Activity[]>(STATIC_ACTIVITIES);
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
+  const { user } = useAuth();
 
   const fetchData = useCallback(async () => {
     try {
@@ -105,9 +107,10 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
 
       // Auto-seed if both are empty
       if (issueData.length === 0 && eventData.length === 0) {
+        // Only seed events, never auto-seed issues
         await fetch("/api/seed", { method: "POST" });
-        const [sI, sE] = await Promise.all([fetch("/api/issues"), fetch("/api/events")]);
-        setIssues(sI.ok ? await sI.json() : []);
+        const sE = await fetch("/api/events");
+        setIssues([]);
         setEvents(sE.ok ? await sE.json() : []);
       } else {
         setIssues(issueData);
@@ -154,12 +157,13 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   }, [showToast]);
 
   const addIssue = useCallback(
-    async (newIssue: Omit<Issue, "id" | "upvotes" | "affectedCount" | "createdAt" | "comments" | "isNew">) => {
+    async (newIssue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">) => {
       try {
+        const payload = { ...newIssue, authorName: user?.displayName || "Student Reporter" };
         const res = await fetch("/api/issues", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newIssue),
+          body: JSON.stringify(payload),
         });
         if (!res.ok) throw new Error("Failed to create issue");
         const created: Issue = await res.json();
@@ -196,7 +200,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ issueId, content, author: "Current User" }),
+        body: JSON.stringify({ issueId, content, author: user?.displayName || "Student Reporter" }),
       });
       if (!res.ok) throw new Error("Failed to post comment");
       const newComment = await res.json();
