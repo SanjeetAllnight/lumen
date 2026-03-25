@@ -39,6 +39,22 @@ function timeAgo(dateString: string | null | undefined): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
+function priorityBadge(priority?: string) {
+  if (!priority) return null;
+  const cfg: Record<string, { label: string; cls: string }> = {
+    critical: { label: "Critical", cls: "text-red-400 bg-red-500/15 border-red-500/30" },
+    high:     { label: "High",     cls: "text-orange-400 bg-orange-500/15 border-orange-500/30" },
+    medium:   { label: "Medium",   cls: "text-yellow-400 bg-yellow-500/15 border-yellow-500/30" },
+    low:      { label: "Low",      cls: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" },
+  };
+  const c = cfg[priority];
+  if (!c) return null;
+  return (
+    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${c.cls}`}>
+      {c.label}
+    </span>
+  );
+}
 function IssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.MouseEvent) => void }) {
   const router = useRouter();
   return (
@@ -46,10 +62,13 @@ function IssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.Mous
       onClick={() => router.push(`/issue/${issue.id}`)}
       className="glass-panel p-6 rounded-[2rem] border border-outline-variant/15 bg-surface-container/30 hover:border-primary/25 hover:bg-surface-container/50 transition-all duration-300 cursor-pointer flex flex-col h-full group"
     >
-      <div className="flex justify-between items-start mb-4">
-        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
-          {statusLabel(issue.status)}
-        </span>
+      <div className="flex flex-wrap justify-between items-start mb-3 gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
+            {statusLabel(issue.status)}
+          </span>
+          {priorityBadge(issue.priority)}
+        </div>
         <span className="text-[10px] text-on-surface-variant/60">{timeAgo(issue.createdAt)}</span>
       </div>
       <h4 className="text-base font-headline font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{issue.title}</h4>

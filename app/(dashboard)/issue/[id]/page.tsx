@@ -120,13 +120,26 @@ export default function IssueDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12 items-start">
         {/* LEFT: Main content */}
         <div className="lg:col-span-8 space-y-8">
-          {/* Issue hero (no fake image) */}
-          <div className="relative rounded-3xl overflow-hidden border border-white/5 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 min-h-[220px] flex flex-col justify-end p-8">
-            <div className="absolute inset-0 opacity-5">
-              <div className="w-full h-full" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(199,153,255,0.5) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
+          {/* Issue hero */}
+          <div className="relative rounded-3xl overflow-hidden border border-white/5 min-h-[220px] flex flex-col justify-end">
+            {issue.imageUrl ? (
+              <>
+                <img
+                  src={issue.imageUrl}
+                  alt={issue.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+                <div className="w-full h-full opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(199,153,255,0.5) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
+              </div>
+            )}
+            <div className="relative p-8">
+              <StatusBadge status={issue.status} />
+              <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-surface leading-tight mt-3">{issue.title}</h1>
             </div>
-            <StatusBadge status={issue.status} />
-            <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-surface leading-tight mt-3">{issue.title}</h1>
           </div>
 
           {/* Meta row */}

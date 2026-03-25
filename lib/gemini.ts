@@ -77,3 +77,47 @@ Original Description: ${description}`;
   const parsed = JSON.parse(raw);
   return { title: parsed.title, description: parsed.description };
 }
+
+/**
+ * Classifies a campus issue by category and priority based on title + description.
+ * Called server-side after issue is submitted.
+ */
+export async function classifyIssue(
+  title: string,
+  description: string
+): Promise<{ category: string; priority: "low" | "medium" | "high" | "critical" }> {
+  const fallback = { category: "Facility", priority: "low" as const };
+  if (!process.env.GEMINI_API_KEY) return fallback;
+  try {
+    const model = genAI.getGenerativeModel({ model: MODEL });
+    const prompt = `You are a campus facility management AI. Classify this student-reported issue.
+
+Title: ${title}
+Description: ${description}
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "category": "<one of: Facility, Electrical, Network, Safety, Sanitary, Academic, Security, Other>",
+  "priority": "<one of: low, medium, high, critical>"
+}
+
+Priority rules:
+- critical: safety hazard, fire risk, injury risk, total outage affecting everyone
+- high: affects many users, significant disruption
+- medium: moderate inconvenience, affects a group
+- low: minor issue, cosmetic, affects one or few`;
+
+    const result = await model.generateContent(prompt);
+    const raw = stripJsonFences(result.response.text());
+    const parsed = JSON.parse(raw);
+    const validPriorities = ["low", "medium", "high", "critical"];
+    const validCategories = ["Facility", "Electrical", "Network", "Safety", "Sanitary", "Academic", "Security", "Other"];
+    return {
+      category: validCategories.includes(parsed.category) ? parsed.category : "Facility",
+      priority: validPriorities.includes(parsed.priority) ? parsed.priority : "low",
+    };
+  } catch (err) {
+    console.error("[Gemini] classifyIssue failed:", err);
+    return fallback;
+  }
+}

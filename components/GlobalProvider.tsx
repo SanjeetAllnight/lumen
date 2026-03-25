@@ -29,6 +29,8 @@ export type Issue = {
   createdAt: string;
   comments?: Comment[];
   isNew?: boolean;
+  priority?: "low" | "medium" | "high" | "critical";
+  imageUrl?: string;
 };
 
 export type CampusEvent = {
@@ -59,7 +61,7 @@ type GlobalContextType = {
   isLoading: boolean;
   upvoteIssue: (id: string) => void;
   addComment: (issueId: string, content: string) => Promise<Comment | null>;
-  addIssue: (issue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">) => Promise<void>;
+  addIssue: (issue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">, image?: File) => Promise<void>;
   getIssue: (id: string) => Promise<Issue | null>;
   getComments: (issueId: string) => Promise<Comment[]>;
   addFeedback: (type: string, message: string) => void;
@@ -140,13 +142,19 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   }, [showToast]);
 
   const addIssue = useCallback(
-    async (newIssue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">) => {
+    async (newIssue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">, image?: File) => {
       try {
-        const payload = { ...newIssue, authorName: user?.displayName || "Student Reporter" };
+        const formData = new FormData();
+        formData.append("title", newIssue.title);
+        formData.append("description", newIssue.description);
+        formData.append("location", newIssue.location || "");
+        formData.append("category", newIssue.category || "Facility");
+        formData.append("authorName", user?.displayName || "Student Reporter");
+        if (image) formData.append("image", image);
+
         const res = await fetch("/api/issues", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: formData,
         });
         if (!res.ok) throw new Error("Failed to create issue");
         const created: Issue = await res.json();

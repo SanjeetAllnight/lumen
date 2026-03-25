@@ -248,10 +248,35 @@ export default function MapPage() {
     const iBZ: Record<string, Issue[]>       = {};
     const eBZ: Record<string, CampusEvent[]> = {};
     for (const z of ZONES) { iBZ[z.id] = []; eBZ[z.id] = []; }
-    for (const issue of issues) { if (iBZ[issue.location]) iBZ[issue.location].push(issue); }
-    for (const event of events) { if (eBZ[event.location]) eBZ[event.location].push(event); }
+
+    // Issues: exact match on location
+    for (const issue of issues) {
+      if (iBZ[issue.location]) iBZ[issue.location].push(issue);
+    }
+
+    // Events: case-insensitive + fuzzy match to handle old Firestore data
+    // e.g. "IT dept" → "IT Dept", "Mining" → "Mining Dept"
+    const zoneLower = ZONES.map(z => ({ id: z.id, lower: z.id.toLowerCase().replace(/\s+/g, "") }));
+    for (const event of events) {
+      const evLoc = event.location?.trim() ?? "";
+      // 1. Exact match first
+      if (eBZ[evLoc] !== undefined) {
+        eBZ[evLoc].push(event);
+        continue;
+      }
+      // 2. Case-insensitive + whitespace-normalized match
+      const evNorm = evLoc.toLowerCase().replace(/\s+/g, "");
+      const matched = zoneLower.find(z =>
+        z.lower === evNorm ||                         // exact normalize
+        z.lower.startsWith(evNorm) ||                 // "mining" → "miningdept"
+        evNorm.startsWith(z.lower)
+      );
+      if (matched) eBZ[matched.id].push(event);
+    }
+
     return { issuesByZone: iBZ, eventsByZone: eBZ };
   }, [issues, events]);
+
 
   const totalActive = issues.filter(i => i.status !== "resolved").length;
   const totalEvents = events.length;

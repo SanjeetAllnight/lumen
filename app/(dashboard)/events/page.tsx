@@ -205,17 +205,17 @@ function AddEventModal({ onClose, onSubmitted, userId }: { onClose: () => void; 
                     >
                       <option value="" disabled>Select a location</option>
                       <option value="Computer Dept">Computer Dept</option>
-                      <option value="IT dept">IT dept</option>
-                      <option value="Civil dept">Civil dept</option>
-                      <option value="ETC dept">ETC dept</option>
-                      <option value="ENE dept">ENE dept</option>
-                      <option value="Mech dept">Mech dept</option>
+                      <option value="IT Dept">IT Dept</option>
+                      <option value="Civil Dept">Civil Dept</option>
+                      <option value="ETC Dept">ETC Dept</option>
+                      <option value="ENE Dept">ENE Dept</option>
+                      <option value="Mech Dept">Mech Dept</option>
                       <option value="Library">Library</option>
                       <option value="Canteen">Canteen</option>
                       <option value="Main Gate">Main Gate</option>
                       <option value="Admin Block">Admin Block</option>
                       <option value="Academic Block">Academic Block</option>
-                      <option value="Mining">Mining</option>
+                      <option value="Mining Dept">Mining Dept</option>
                       <option value="Hostel">Hostel</option>
                       <option value="Ground">Ground</option>
                     </select>
@@ -427,7 +427,7 @@ export default function EventsPage() {
           <p className="text-on-surface-variant text-sm mt-1">Discover and explore what's happening on campus</p>
         </div>
         {/* Add Event Button */}
-        {user && (
+        {user && !isAdmin && (
           <button
             id="add-event-btn"
             onClick={() => setShowModal(true)}

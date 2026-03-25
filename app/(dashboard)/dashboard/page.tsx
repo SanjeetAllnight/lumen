@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useGlobal } from '@/components/GlobalProvider';
+import { useAuth } from '@/components/AuthProvider';
 import { HeroIssueSkeleton, IssueListSkeleton } from '@/components/Skeletons';
 
 function timeAgo(dateString: string | null | undefined): string {
@@ -37,6 +38,8 @@ function formatEventDate(dateStr: string | null | undefined): string {
 export default function DashboardPage() {
   const router = useRouter();
   const { issues, events, upvoteIssue, isLoading } = useGlobal();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   if (isLoading) {
     return (
@@ -47,8 +50,13 @@ export default function DashboardPage() {
     );
   }
 
-  // Sort issues by upvotes for display
-  const sortedByUpvotes = [...issues].sort((a, b) => b.upvotes - a.upvotes);
+  const PRIORITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  const sortedByUpvotes = [...issues].sort((a, b) => {
+    const pa = PRIORITY_ORDER[a.priority ?? ""] ?? 4;
+    const pb = PRIORITY_ORDER[b.priority ?? ""] ?? 4;
+    if (pa !== pb) return pa - pb;
+    return (b.upvotes ?? 0) - (a.upvotes ?? 0);
+  });
   const topIssue = sortedByUpvotes[0];
   const trendingIssues = sortedByUpvotes.slice(1, 4); // next 3 for trending grid
 
@@ -73,13 +81,15 @@ export default function DashboardPage() {
           <div className="glass-panel rounded-[2.5rem] p-10 border border-white/5 flex flex-col items-center justify-center text-center min-h-[200px]">
             <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-3">inbox</span>
             <p className="text-on-surface-variant font-semibold">No issues reported yet.</p>
-            <p className="text-on-surface-variant/60 text-sm mt-1">Be the first to report a campus issue.</p>
-            <button
-              onClick={() => document.dispatchEvent(new Event("openReportModal"))}
-              className="mt-6 px-6 py-2.5 bg-primary text-on-primary rounded-full font-bold text-sm hover:brightness-110 transition-all"
-            >
-              Report an Issue
-            </button>
+            <p className="text-on-surface-variant/60 text-sm mt-1">{isAdmin ? "Waiting for students to submit issues." : "Be the first to report a campus issue."}</p>
+            {!isAdmin && (
+              <button
+                onClick={() => document.dispatchEvent(new Event("openReportModal"))}
+                className="mt-6 px-6 py-2.5 bg-primary text-on-primary rounded-full font-bold text-sm hover:brightness-110 transition-all"
+              >
+                Report an Issue
+              </button>
+            )}
           </div>
         ) : (
           <div className="group card-hover glass-panel rounded-[2.5rem] p-1 md:p-1.5 border border-error/20 bg-gradient-to-br from-error/10 via-transparent to-transparent glow-error transition-all duration-500">
