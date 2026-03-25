@@ -115,37 +115,19 @@ function IssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.Mous
           </span>
         </div>
       </div>
-
-      {/* ── Content ── */}
-      <div className="p-6 flex flex-col flex-1 gap-3">
-        <div>
-          <h4 className="font-headline text-lg font-bold text-on-surface mb-1 leading-snug group-hover:text-primary transition-colors line-clamp-2">
-            {issue.title}
-          </h4>
-          <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
-            {issue.aiSummary || issue.description}
-          </p>
-        </div>
-
-        {/* Location */}
-        <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-          <span className="material-symbols-outlined text-sm text-primary">location_on</span>
-          <span>{issue.location}</span>
-        </div>
-
-        {/* Footer: upvote + category */}
-        <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-          <button
-            onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-            <span className="text-sm font-bold">{issue.upvotes}</span>
-          </button>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
-            <span className="material-symbols-outlined text-xs">{categoryIcon}</span>
-            <span>{issue.category || "Facility"}</span>
-          </div>
+      <h4 className="text-base font-headline font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{issue.title}</h4>
+      <p className="text-xs text-on-surface-variant leading-relaxed flex-1 line-clamp-3">{issue.aiSummary || issue.description}</p>
+      <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+        <button
+          onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:scale-95"
+        >
+          <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
+          <span className="text-sm font-bold">{issue.upvotes}</span>
+        </button>
+        <div className="flex items-center gap-2 text-on-surface-variant text-[11px]">
+          <span className="material-symbols-outlined text-sm">location_on</span>
+          <span className="font-medium">{issue.location}</span>
         </div>
       </div>
     </div>
@@ -292,7 +274,7 @@ export default function ComplaintsPage() {
   }
 
   return (
-    <div className="px-8 pb-16 w-full">
+    <div className="px-8 pb-16 w-full page-fade">
       {/* Header */}
       <div className="flex justify-between items-end mb-8">
         <div>

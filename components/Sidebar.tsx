@@ -9,11 +9,12 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
 
   const navLinks = [
-    { name: "Dashboard", href: "/dashboard", icon: "dashboard" },
-    { name: "Live Map", href: "/map", icon: "explore" },
+    { name: "Dashboard",  href: "/dashboard", icon: "dashboard" },
+    { name: "Live Map",   href: "/map",        icon: "explore" },
+    { name: "Trending",   href: "/trending",   icon: "whatshot" },
     { name: "Complaints", href: "/complaints", icon: "report_problem" },
-    { name: "Events", href: "/events", icon: "event_note" },
-    { name: "Activity", href: "/activity", icon: "insights" },
+    { name: "Events",     href: "/events",     icon: "event_note" },
+    { name: "Activity",   href: "/activity",   icon: "insights" },
   ];
 
   const adminLinks = [
