@@ -8,6 +8,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { classifySeverity, classifyCategory, generateSummary } from "@/lib/classifier";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +31,7 @@ export async function GET() {
   }
 }
 
-// POST /api/issues — save complaint instantly with NO AI wait and NO image wait.
-// AI classification and image upload both happen async on the client AFTER this returns.
+// POST /api/issues — save complaint with rule-based severity (instant, no AI)
 export async function POST(req: NextRequest) {
   try {
     let title = "", description = "", location = "", category = "", authorName = "", imageUrl = "";
@@ -45,7 +45,6 @@ export async function POST(req: NextRequest) {
       location    = (form.get("location")    as string) || "";
       category    = (form.get("category")    as string) || "";
       authorName  = (form.get("authorName")  as string) || "";
-      // Client may pass a pre-uploaded Firebase Storage URL
       imageUrl    = (form.get("imageUrl")    as string) || "";
     } else {
       const body  = await req.json();
@@ -61,18 +60,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "title and description are required" }, { status: 400 });
     }
 
-    // Write to Firestore immediately — priority/aiSummary patched later by /classify
+    // ── Rule-based classification (synchronous, < 1ms) ────────────────────────
+    const priority  = classifySeverity(title, description);
+    const aiCategory = classifyCategory(title, description);
+    const aiSummary = generateSummary(title, description);
+    console.log("[POST /api/issues] classified →", { priority, aiCategory });
+
     const newIssue = {
       title,
       description,
-      aiSummary:  "",
-      location:   location   || "Unknown",
-      category:   category   || "Facility",
-      priority:   null,       // filled async by POST /api/issues/[id]/classify
-      authorName: authorName || "Student Reporter",
+      aiSummary,
+      location:   location    || "Unknown",
+      category:   aiCategory  || category || "Facility",
+      priority,                 // immediately available — no background step
+      authorName: authorName  || "Student Reporter",
       status:     "reported",
       upvotes:    0,
-      imageUrl:   imageUrl   || "",
+      imageUrl:   imageUrl    || "",
       createdAt:  Timestamp.now(),
     };
 

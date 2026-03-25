@@ -146,7 +146,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   const addIssue = useCallback(
     async (newIssue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">, image?: File) => {
       try {
-        // ─── Step 1: Save complaint immediately (no AI, no image wait) ──────────
+        // ─── Step 1: Save complaint with rule-based severity (instant) ───────────
         const formData = new FormData();
         formData.append("title",       newIssue.title);
         formData.append("description", newIssue.description);
@@ -158,13 +158,13 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         if (!res.ok) throw new Error("Failed to create issue");
         const created: Issue = await res.json();
 
-        // Add to local state immediately — show as "processing" (priority null)
+        // Priority is always set immediately by the rule-based classifier
         setIssues((prev) => [{ ...created, isNew: true }, ...prev]);
-        showToast("Complaint submitted! Processing in background... 🚨", "success", "campaign");
+        showToast("Complaint submitted successfully! 🚨", "success", "campaign");
         addActivity({
           type:        "issue",
           title:       `🚨 New Report: ${created.title}`,
-          description: created.description,
+          description: created.aiSummary || created.description,
           tag:         created.category,
           icon:        "campaign",
         });
@@ -198,29 +198,6 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
             console.warn("[addIssue] Rejected non-JPG/PNG file:", image.type);
           }
         }
-
-        // ─── Step 3: Run AI classification in background ────────────────────────
-        (async () => {
-          try {
-            const classifyRes = await fetch(`/api/issues/${created.id}/classify`, {
-              method:  "POST",
-              headers: { "Content-Type": "application/json" },
-              body:    JSON.stringify({ title: created.title, description: created.description }),
-            });
-            if (classifyRes.ok) {
-              const { priority, aiSummary, category } = await classifyRes.json();
-              // Patch local state so severity badge + summary update live
-              setIssues((prev) =>
-                prev.map((i) =>
-                  i.id === created.id ? { ...i, priority, aiSummary, category } : i
-                )
-              );
-              console.log("[addIssue] AI classify patched:", priority);
-            }
-          } catch (aiErr) {
-            console.error("[addIssue] Background AI classify failed:", aiErr);
-          }
-        })();
 
       } catch (err) {
         console.error("[addIssue]", err);

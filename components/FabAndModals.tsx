@@ -163,14 +163,6 @@ export default function FabAndModals() {
               </button>
             </div>
 
-            {/* AI Classification notice */}
-            <div className="mx-6 mt-5 px-4 py-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-base">auto_awesome</span>
-              <p className="text-xs text-primary font-medium">
-                AI will automatically classify the priority and category after you submit.
-              </p>
-            </div>
-
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
               <form id="report-form" onSubmit={handleReportSubmit} className="space-y-5">
 
