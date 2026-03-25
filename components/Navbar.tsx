@@ -124,8 +124,8 @@ export default function Navbar() {
               )}
             </button>
             {isNotificationsOpen && (
-              <div className="absolute right-0 top-full mt-4 w-80 bg-surface-container-high border border-white/10 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] overflow-hidden glass-panel z-50">
-                <div className="p-4 border-b border-white/5 flex justify-between items-center bg-surface-container">
+              <div className="absolute right-0 top-full mt-4 w-80 bg-[#0c0e14] border border-white/10 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] overflow-hidden z-50">
+                <div className="p-4 border-b border-white/5 flex justify-between items-center bg-[#0a0c10]">
                   <h4 className="text-sm font-bold text-on-surface flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-base">notifications</span>
                     Notifications
