@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";
@@ -30,21 +30,35 @@ export async function GET(
   }
 }
 
-// PATCH /api/issues/[id] — resolve an issue (admin only)
+// PATCH /api/issues/[id] — update issue status and timeline (admin only)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const { status } = await req.json();
+    const { status, technician, note } = await req.json();
 
-    if (status !== "resolved") {
-      return NextResponse.json({ error: "status must be 'resolved'" }, { status: 400 });
+    const validStatuses = ["reported", "assigned", "in_progress", "resolved", "dismissed"];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    await updateDoc(doc(db, "issues", id), { status });
-    return NextResponse.json({ id, status });
+    const payload: any = { status };
+    if (technician) {
+      payload.technician = technician;
+    }
+
+    if (note) {
+      payload.updates = arrayUnion({
+        status,
+        note,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    await updateDoc(doc(db, "issues", id), payload);
+    return NextResponse.json({ id, ...payload });
   } catch (error) {
     console.error("[PATCH /api/issues/[id]]", error);
     return NextResponse.json({ error: "Failed to update issue" }, { status: 500 });

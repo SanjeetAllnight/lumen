@@ -16,9 +16,10 @@ export default function Sidebar() {
     { name: "Activity", href: "/activity", icon: "insights" },
   ];
 
-  if (user?.role === "admin") {
-    navLinks.push({ name: "Admin", href: "/admin", icon: "admin_panel_settings" });
-  }
+  const adminLinks = [
+    { name: "Issue Management", href: "/admin?tab=issues", icon: "gavel" },
+    { name: "Pending Events", href: "/admin?tab=events", icon: "pending_actions" },
+  ];
 
   return (
     <aside className="fixed left-0 top-0 h-full w-64 z-40 bg-slate-950/40 backdrop-blur-2xl border-r border-slate-800/50 hidden lg:flex flex-col pt-20 pb-8 px-4 shadow-2xl shadow-purple-900/20">
@@ -40,6 +41,34 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {user?.role === "admin" && (
+          <div className="mt-8 mb-2">
+            <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-red-500/80 mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              Admin Panel
+            </h3>
+            <div className="space-y-1">
+              {adminLinks.map((link) => {
+                const isActive = pathname.startsWith("/admin");
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-['Manrope'] font-medium text-sm transition-all ease-out duration-300 ${
+                      isActive
+                        ? "text-red-400 border-r-2 border-red-500 bg-red-500/10 shadow-[inset_-10px_0_20px_-10px_rgba(239,68,68,0.2)]"
+                        : "text-slate-500 hover:text-red-300 hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[18px]" data-icon={link.icon}>{link.icon}</span>
+                    <span>{link.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* User info + logout */}

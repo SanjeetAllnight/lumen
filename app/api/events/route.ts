@@ -11,15 +11,26 @@ export async function GET(req: NextRequest) {
     const pending = searchParams.get("pending") === "true";
 
     const q = pending
-      ? query(collection(db, "events"), where("status", "==", "pending"), orderBy("date", "desc"))
-      : query(collection(db, "events"), where("status", "==", "approved"), orderBy("date", "desc"));
+      ? query(collection(db, "events"), where("status", "==", "pending"))
+      : query(collection(db, "events"), where("status", "==", "approved"));
+    
     const snapshot = await getDocs(q);
-    const events = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      date: doc.data().date?.toDate?.().toISOString?.() ?? null,
-      createdAt: doc.data().createdAt?.toDate?.().toISOString?.() ?? null,
-    }));
+    const events = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        date: data.date?.toDate?.().toISOString?.() ?? null,
+        createdAt: data.createdAt?.toDate?.().toISOString?.() ?? null,
+      };
+    });
+
+    events.sort((a, b) => {
+      const timeA = a.date ? new Date(a.date).getTime() : 0;
+      const timeB = b.date ? new Date(b.date).getTime() : 0;
+      return timeB - timeA;
+    });
+
     return NextResponse.json(events);
   } catch (error) {
     console.error("[GET /api/events]", error);

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useGlobal } from '@/components/GlobalProvider';
+import { useGlobal, getStatusConfig } from '@/components/GlobalProvider';
 import { IssueListSkeleton, EmptyIssues } from '@/components/Skeletons';
 
 export default function ComplaintsPage() {
@@ -265,22 +265,24 @@ export default function ComplaintsPage() {
         </div>
 
         {/* New Issues Feed */}
-        {newIssues.map((issue) => (
-          <div key={issue.id} onClick={() => router.push(`/issue/${issue.id}`)} className="xl:col-span-4 cursor-pointer">
-            <div className="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-4 rounded-2xl bg-primary/20 text-primary shadow-lg shadow-primary/10">
-                  <span className="material-symbols-outlined text-2xl">campaign</span>
+        {newIssues.map((issue) => {
+          const conf = getStatusConfig(issue.status);
+          return (
+            <div key={issue.id} onClick={() => router.push(`/issue/${issue.id}`)} className="xl:col-span-4 cursor-pointer">
+              <div className="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
+                <div className="flex justify-between items-start mb-6">
+                  <div className={`p-4 rounded-2xl ${conf.bgLight} ${conf.color} shadow-lg ${conf.shadow}`}>
+                    <span className="material-symbols-outlined text-2xl">{conf.icon}</span>
+                  </div>
+                  <div className={`${conf.bgLight} ${conf.color} px-3 py-1.5 rounded-full text-[10px] font-black border ${conf.border}/30 uppercase tracking-widest`}>{conf.label}</div>
                 </div>
-                <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-[10px] font-black border border-primary/30 uppercase tracking-widest">{issue.status}</div>
-              </div>
-              <h4 className="text-xl font-headline font-bold mb-3 group-hover:text-primary transition-colors">{issue.title}</h4>
-              <p className="text-sm text-on-surface-variant mb-6 leading-relaxed flex-1">
-                {issue.description}
-              </p>
-              <div className="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
-                <div className="flex items-center justify-between">
-                  <button onClick={(e) => { e.stopPropagation(); upvoteIssue(issue.id); }} className="flex items-center gap-3 px-6 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-all shadow-lg shadow-primary/5 border border-primary/20">
+                <h4 className={`text-xl font-headline font-bold mb-3 group-hover:${conf.color} transition-colors`}>{issue.title}</h4>
+                <p className="text-sm text-on-surface-variant mb-6 leading-relaxed flex-1">
+                  {issue.description}
+                </p>
+                <div className="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
+                  <div className="flex items-center justify-between">
+                    <button onClick={(e) => { e.stopPropagation(); upvoteIssue(issue.id); }} className={`flex items-center gap-3 px-6 py-3 rounded-xl ${conf.bgLight} hover:bg-white/10 ${conf.color} transition-all shadow-lg ${conf.shadow} border ${conf.border}/20`}>
                     <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
                     <span className="text-lg font-bold">{issue.upvotes}</span>
                   </button>
@@ -292,12 +294,12 @@ export default function ComplaintsPage() {
                       {issue.category}
                     </div>
                   </div>
-                  <button className="text-primary text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4">VIEW THREAD</button>
+                  <button className={`${conf.color} text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4`}>VIEW THREAD</button>
                 </div>
               </div>
             </div>
           </div>
-        ))}
+        )})}
 
       </div>
 

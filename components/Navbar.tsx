@@ -8,6 +8,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const showSearch = ["/complaints", "/events", "/activity"].includes(pathname);
+  const isAdminMode = pathname.startsWith("/admin");
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -23,10 +24,16 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-slate-900/60 backdrop-blur-xl shadow-[0_0_40px_-15px_rgba(199,153,255,0.3)] border-b border-purple-500/10">
+    <header className={`fixed top-0 w-full z-50 bg-slate-900/60 backdrop-blur-xl ${isAdminMode ? 'shadow-[0_0_40px_-15px_rgba(239,68,68,0.3)] border-b border-red-500/20' : 'shadow-[0_0_40px_-15px_rgba(199,153,255,0.3)] border-b border-purple-500/10'}`}>
       <div className="flex justify-between items-center px-6 py-3 w-full max-w-[1600px] mx-auto">
         <div className="flex items-center gap-8">
           <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-fuchsia-500 bg-clip-text text-transparent font-['Space_Grotesk'] tracking-tight">Lumen</Link>
+          {isAdminMode && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              <span className="text-[10px] font-black tracking-[0.2em] text-red-400 uppercase">Admin Mode</span>
+            </div>
+          )}
           {showSearch && (
             <div className="hidden md:flex items-center bg-surface-container-lowest px-4 py-1.5 rounded-full border border-outline-variant/20">
               <span className="material-symbols-outlined text-slate-400 text-sm">search</span>

@@ -20,7 +20,9 @@ export type Issue = {
   aiSummary?: string;
   category: string;
   location: string;
-  status: "reported" | "in_progress" | "resolved" | string;
+  status: "reported" | "assigned" | "in_progress" | "resolved" | "dismissed";
+  technician?: string;
+  updates?: { status: string; note: string; timestamp: string }[];
   upvotes: number;
   affectedCount: number;
   createdAt: string;
@@ -62,7 +64,18 @@ type GlobalContextType = {
   addFeedback: (type: string, message: string) => void;
   addActivity: (activity: Omit<Activity, "id" | "timestamp">) => void;
   updateEventStatus: (id: string, status: "approved" | "rejected") => Promise<void>;
-  resolveIssue: (id: string) => Promise<void>;
+  updateIssueStatus: (id: string, status: Issue["status"], technician?: string, note?: string) => Promise<void>;
+};
+
+export const getStatusConfig = (status: string) => {
+  switch (status) {
+    case 'reported': return { color: 'text-error', bg: 'bg-error', bgLight: 'bg-error/20', border: 'border-error', icon: 'campaign', label: 'Reported', shadow: 'shadow-error/60' };
+    case 'assigned': return { color: 'text-amber-400', bg: 'bg-amber-400', bgLight: 'bg-amber-400/20', border: 'border-amber-400', icon: 'assignment_ind', label: 'Assigned', shadow: 'shadow-amber-400/60' };
+    case 'in_progress': return { color: 'text-primary', bg: 'bg-primary', bgLight: 'bg-primary/20', border: 'border-primary', icon: 'handyman', label: 'In Progress', shadow: 'shadow-[rgba(199,153,255,0.6)]' };
+    case 'resolved': return { color: 'text-emerald-400', bg: 'bg-emerald-400', bgLight: 'bg-emerald-400/20', border: 'border-emerald-400', icon: 'check_circle', label: 'Resolved', shadow: 'shadow-emerald-400/60' };
+    case 'dismissed': return { color: 'text-slate-400', bg: 'bg-slate-500', bgLight: 'bg-slate-500/20', border: 'border-slate-500', icon: 'block', label: 'Dismissed', shadow: 'shadow-slate-500/60' };
+    default: return { color: 'text-on-surface', bg: 'bg-white', bgLight: 'bg-white/10', border: 'border-white/20', icon: 'info', label: status, shadow: 'shadow-white/60' };
+  }
 };
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -219,18 +232,31 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
     ]);
   }, []);
 
-  const resolveIssue = useCallback(async (id: string) => {
+  const updateIssueStatus = useCallback(async (id: string, status: Issue["status"], technician?: string, note?: string) => {
     try {
       const res = await fetch(`/api/issues/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "resolved" }),
+        body: JSON.stringify({ status, technician, note }),
       });
       if (!res.ok) throw new Error();
-      setIssues(prev => prev.map(i => i.id === id ? { ...i, status: "resolved" } : i));
-      showToast("Issue marked as resolved! ✅", "success", "check_circle");
+      
+      const newUpdate = note ? { status, note, timestamp: new Date().toISOString() } : undefined;
+
+      setIssues(prev => prev.map(i => {
+        if (i.id !== id) return i;
+        const newUpdates = newUpdate ? [...(i.updates || []), newUpdate] : (i.updates || []);
+        return { 
+          ...i, 
+          status, 
+          ...(technician && { technician }),
+          updates: newUpdates
+        };
+      }));
+      
+      showToast(`Issue marked as ${status.replace("_", " ")}!`, "success", "check_circle");
     } catch {
-      showToast("Failed to resolve issue.", "error", "error");
+      showToast("Failed to update issue status.", "error", "error");
     }
   }, [showToast]);
 
@@ -262,7 +288,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
     <GlobalContext.Provider value={{
       issues, events, activities, isLoading,
       upvoteIssue, addComment, addIssue, getIssue, getComments, addFeedback, addActivity,
-      updateEventStatus, resolveIssue,
+      updateEventStatus, updateIssueStatus,
     }}>
       {children}
     </GlobalContext.Provider>

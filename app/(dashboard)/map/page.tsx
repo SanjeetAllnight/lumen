@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useGlobal, type Issue, type CampusEvent } from "@/components/GlobalProvider";
+import { useGlobal, getStatusConfig, type Issue, type CampusEvent } from "@/components/GlobalProvider";
 
 // ─── Zone definitions ──────────────────────────────────────────────────────────
 type Zone = { id: string; name: string; icon: string; col: string; row: string };
@@ -175,11 +175,13 @@ function ZoneModal({ zone, issues, events, onClose }: {
                 <p className="font-bold text-white mb-1">All Clear!</p>
                 <p className="text-sm text-slate-400">No issues reported in this zone.</p>
               </div>
-            ) : issues.map(issue => (
+            ) : issues.map(issue => {
+              const conf = getStatusConfig(issue.status);
+              return (
               <button key={issue.id} onClick={() => router.push(`/issue/${issue.id}`)}
                 className="w-full text-left p-5 hover:bg-white/5 transition-colors group flex items-start gap-3"
               >
-                <div className={`mt-2 w-2 h-2 rounded-full flex-shrink-0 ${issue.status === "resolved" ? "bg-emerald-400" : issue.status === "in_progress" ? "bg-yellow-400" : "bg-red-400"}`} />
+                <div className={`mt-2 w-2 h-2 rounded-full flex-shrink-0 ${conf.bg}`} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-slate-200 group-hover:text-white transition-colors line-clamp-1">{issue.title}</p>
                   {issue.aiSummary && <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{issue.aiSummary}</p>}
@@ -188,14 +190,14 @@ function ZoneModal({ zone, issues, events, onClose }: {
                       <span className="material-symbols-outlined text-[13px] text-primary">thumb_up</span>
                       {issue.upvotes.toLocaleString()}
                     </span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${issue.status === "resolved" ? "bg-emerald-500/15 text-emerald-300" : issue.status === "in_progress" ? "bg-yellow-500/15 text-yellow-300" : "bg-red-500/15 text-red-300"}`}>
-                      {issue.status.replace("_", " ")}
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${conf.bgLight} ${conf.color}`}>
+                      {conf.label}
                     </span>
                   </div>
                 </div>
                 <span className="material-symbols-outlined text-slate-600 group-hover:text-primary transition-colors flex-shrink-0 mt-1 text-sm">arrow_forward</span>
               </button>
-            ))
+            )})
           ) : (
             events.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-14 text-center px-6">

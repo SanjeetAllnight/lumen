@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useGlobal, type Issue, type Comment } from '@/components/GlobalProvider';
+import { useGlobal, getStatusConfig, type Issue, type Comment } from '@/components/GlobalProvider';
 
 export default function IssueDetailPage() {
   const params = useParams();
@@ -62,6 +62,10 @@ export default function IssueDetailPage() {
     );
   }
 
+  const currentStatusConf = getStatusConfig(issue.status);
+  const timeline = [...(issue.updates || [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const fullTimeline = [...timeline, { status: "reported", note: `Issue reported by Alex Rivera`, timestamp: issue.createdAt }];
+
   return (
     <div className="flex-1 md:p-10 max-w-7xl mx-auto w-full">
       {/* Issue Header Section */}
@@ -76,7 +80,7 @@ export default function IssueDetailPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60"></div>
             <div className="absolute bottom-6 left-6">
-              <span className="px-3 py-1 bg-error/20 backdrop-blur-md border border-error/30 text-error text-[10px] font-bold rounded-full uppercase tracking-tighter mb-3 inline-block">{issue.status}</span>
+              <span className={`px-3 py-1 ${currentStatusConf.bgLight} backdrop-blur-md border ${currentStatusConf.border}/30 ${currentStatusConf.color} text-[10px] font-bold rounded-full uppercase tracking-tighter mb-3 inline-block`}>{currentStatusConf.label}</span>
               <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-surface leading-tight">{issue.title}</h1>
             </div>
           </div>
@@ -147,42 +151,35 @@ export default function IssueDetailPage() {
             <div className="flex items-center justify-between mb-8">
               <h3 className="font-headline font-bold text-on-surface">Live Status</h3>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-secondary shadow-[0_0_10px_#4af8e3] animate-pulse"></span>
-                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">In Progress</span>
+                <span className={`w-2 h-2 rounded-full ${currentStatusConf.bg} shadow-[0_0_10px_currentColor] ${currentStatusConf.color} animate-pulse`}></span>
+                <span className={`text-[10px] font-bold ${currentStatusConf.color} uppercase tracking-widest`}>{currentStatusConf.label}</span>
               </div>
             </div>
 
             <div className="relative space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-primary before:via-primary/50 before:to-surface-variant">
-              <div className="relative pl-10">
-                <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface-variant border-2 border-outline-variant z-10"></div>
-                <div className="opacity-40">
-                  <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Resolved</p>
-                  <p className="text-[10px] text-on-surface-variant">Awaiting completion</p>
-                </div>
-              </div>
-
-              <div className="relative pl-10">
-                <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-10 shadow-[0_0_15px_rgba(199,153,255,0.6)]">
-                  <span className="material-symbols-outlined text-[14px] text-on-primary font-bold">handyman</span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-primary uppercase tracking-widest">In Progress</p>
-                  <p className="text-[10px] text-on-surface-variant">Maintenance crew dispatched</p>
-                  <div className="mt-2 p-3 bg-white/5 rounded-xl border border-white/5">
-                    <p className="text-[11px] italic text-slate-400">"Technician J. Smith is currently on site investigating the cable tensioner."</p>
+              {fullTimeline.map((item, idx) => {
+                const conf = getStatusConfig(item.status);
+                const isLatest = idx === 0;
+                
+                return (
+                  <div key={idx} className={`relative pl-10 ${!isLatest ? 'opacity-60' : ''}`}>
+                    <div className={`absolute left-0 top-1 w-6 h-6 rounded-full ${isLatest ? conf.bg : conf.bgLight} ${isLatest ? '' : `border-2 ${conf.border}`} flex items-center justify-center z-10 ${isLatest && item.status !== 'dismissed' ? `shadow-[0_0_15px] ${conf.shadow}` : ''}`}>
+                      <span className={`material-symbols-outlined text-[14px] ${isLatest ? 'text-on-primary' : conf.color} ${isLatest ? 'font-bold' : ''}`}>{conf.icon}</span>
+                    </div>
+                    <div>
+                      <p className={`text-xs font-bold ${isLatest ? conf.color : 'text-on-surface'} uppercase tracking-widest`}>{conf.label}</p>
+                      <p className="text-[10px] text-on-surface-variant">
+                        {new Date(item.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                      </p>
+                      {item.note && (
+                        <div className="mt-2 p-3 bg-white/5 rounded-xl border border-white/5">
+                          <p className="text-[11px] italic text-slate-400">"{item.note}"</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="relative pl-10">
-                <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center z-10">
-                  <span className="material-symbols-outlined text-[14px] text-primary">check</span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-on-surface uppercase tracking-widest">Reported</p>
-                  <p className="text-[10px] text-on-surface-variant">Today at 14:30</p>
-                </div>
-              </div>
+                );
+              })}
             </div>
 
             <button className="w-full mt-10 py-4 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-2xl active:scale-95 transition-all shadow-xl shadow-primary/20">
