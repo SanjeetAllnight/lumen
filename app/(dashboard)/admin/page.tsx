@@ -14,6 +14,10 @@ export default function AdminIntelligencePage() {
 
   const [pendingEvents, setPendingEvents] = useState<CampusEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  // Participants panel
+  const [viewParticipantsId, setViewParticipantsId] = useState<string | null>(null);
+  const [participants, setParticipants] = useState<{ id: string; name: string; email: string; department: string; joinedAt: string }[]>([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
 
   // Filters & Tabs
   const [activeTab, setActiveTab] = useState<"issues" | "events">("issues");
@@ -83,11 +87,24 @@ export default function AdminIntelligencePage() {
   const handleApproveEvent = async (id: string) => {
     await updateEventStatus(id, "approved");
     setPendingEvents((prev) => prev.filter((e) => e.id !== id));
+    showToast("Event approved successfully!", "success", "check_circle");
   };
 
   const handleRejectEvent = async (id: string) => {
     await updateEventStatus(id, "rejected");
     setPendingEvents((prev) => prev.filter((e) => e.id !== id));
+    showToast("Event rejected.", "error", "cancel");
+  };
+
+  const handleViewParticipants = async (id: string) => {
+    if (viewParticipantsId === id) { setViewParticipantsId(null); return; }
+    setViewParticipantsId(id);
+    setLoadingParticipants(true);
+    try {
+      const res = await fetch(`/api/events/${id}/participants`);
+      if (res.ok) setParticipants(await res.json());
+    } catch { setParticipants([]); }
+    finally { setLoadingParticipants(false); }
   };
 
   // Quick Action
@@ -355,31 +372,91 @@ export default function AdminIntelligencePage() {
               </div>
             ) : (
               pendingEvents.map((evt) => (
-                <div key={evt.id} className="glass-panel rounded-2xl p-6 border border-white/5 flex flex-col md:flex-row gap-6 relative overflow-hidden group items-center">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
+                <div key={evt.id} className="space-y-0">
+                  <div className="glass-panel rounded-2xl p-6 border border-white/5 flex flex-col md:flex-row gap-6 relative overflow-hidden group items-center">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
 
-                  <div className="flex-1 min-w-0 z-10">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest px-2.5 py-1 bg-purple-500/10 rounded-md border border-purple-500/20">
-                        {evt.category || "General"}
-                      </span>
+                    <div className="flex-1 min-w-0 z-10">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest px-2.5 py-1 bg-purple-500/10 rounded-md border border-purple-500/20">
+                          {evt.category || "General"}
+                        </span>
+                      </div>
+                      <h3 className="font-headline font-bold text-on-surface text-xl mb-2 truncate">{evt.title}</h3>
+                      <p className="text-sm text-on-surface-variant mb-4 line-clamp-2">{evt.description}</p>
+                      <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-400">
+                        <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5"><span className="material-symbols-outlined text-[14px] text-purple-400">location_on</span> {evt.location}</span>
+                        <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5"><span className="material-symbols-outlined text-[14px] text-emerald-400">calendar_today</span> {evt.date ? new Date(evt.date).toLocaleDateString() : 'TBD'}</span>
+                      </div>
                     </div>
-                    <h3 className="font-headline font-bold text-on-surface text-xl mb-2 truncate">{evt.title}</h3>
-                    <p className="text-sm text-on-surface-variant mb-4 line-clamp-2">{evt.description}</p>
-                    <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-400">
-                      <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5"><span className="material-symbols-outlined text-[14px] text-purple-400">location_on</span> {evt.location}</span>
-                      <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5"><span className="material-symbols-outlined text-[14px] text-emerald-400">calendar_today</span> {evt.date ? new Date(evt.date).toLocaleDateString() : 'TBD'}</span>
+
+                    <div className="flex flex-row md:flex-col gap-3 w-full md:w-auto z-10 shrink-0">
+                      <button onClick={() => handleViewParticipants(evt.id)} className="flex-1 md:flex-none flex justify-center items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl text-sm font-bold transition-all border border-primary/20">
+                        <span className="material-symbols-outlined text-lg">group</span>
+                        Participants
+                      </button>
+                      <button onClick={() => handleApproveEvent(evt.id)} className="flex-1 md:flex-none flex justify-center items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/5 border border-emerald-500/20">
+                        <span className="material-symbols-outlined text-lg">check_circle</span> Approve
+                      </button>
+                      <button onClick={() => handleRejectEvent(evt.id)} className="flex-1 md:flex-none flex justify-center items-center gap-2 bg-error/10 hover:bg-error/20 text-error px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-error/5 border border-error/20">
+                        <span className="material-symbols-outlined text-lg">cancel</span> Reject
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex flex-row md:flex-col gap-3 w-full md:w-auto z-10 shrink-0">
-                    <button onClick={() => handleApproveEvent(evt.id)} className="flex-1 md:flex-none flex justify-center items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/5 border border-emerald-500/20">
-                      <span className="material-symbols-outlined text-lg">check_circle</span> Approve
-                    </button>
-                    <button onClick={() => handleRejectEvent(evt.id)} className="flex-1 md:flex-none flex justify-center items-center gap-2 bg-error/10 hover:bg-error/20 text-error px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-error/5 border border-error/20">
-                      <span className="material-symbols-outlined text-lg">cancel</span> Reject
-                    </button>
-                  </div>
+                  {/* Participants drawer */}
+                  {viewParticipantsId === evt.id && (
+                    <div className="glass-panel rounded-2xl border border-primary/15 p-5 mt-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-sm font-bold text-on-surface flex items-center gap-2">
+                          <span className="material-symbols-outlined text-primary text-base">group</span>
+                          Participants — {evt.title}
+                        </h4>
+                        <button onClick={() => setViewParticipantsId(null)} className="text-on-surface-variant hover:text-white transition-colors">
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </div>
+                      {loadingParticipants ? (
+                        <div className="flex items-center gap-2 py-4 text-primary text-sm">
+                          <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> Loading…
+                        </div>
+                      ) : participants.length === 0 ? (
+                        <p className="text-on-surface-variant text-sm py-4 text-center">No one has registered yet.</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-on-surface-variant border-b border-white/10">
+                                <th className="text-left py-2 pr-4 font-bold uppercase tracking-widest text-[10px]">#</th>
+                                <th className="text-left py-2 pr-4 font-bold uppercase tracking-widest text-[10px]">Name</th>
+                                <th className="text-left py-2 pr-4 font-bold uppercase tracking-widest text-[10px]">Email</th>
+                                <th className="text-left py-2 pr-4 font-bold uppercase tracking-widest text-[10px]">Dept</th>
+                                <th className="text-left py-2 font-bold uppercase tracking-widest text-[10px]">Joined</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {participants.map((p, i) => (
+                                <tr key={p.id ?? i} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+                                  <td className="py-2 pr-4 text-on-surface-variant">{i + 1}</td>
+                                  <td className="py-2 pr-4 font-medium text-on-surface">{p.name}</td>
+                                  <td className="py-2 pr-4 text-on-surface-variant truncate max-w-[200px]">{p.email}</td>
+                                  <td className="py-2 pr-4">
+                                    <span className="text-[9px] font-black bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full">
+                                      {p.department}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 text-on-surface-variant">
+                                    {p.joinedAt ? new Date(p.joinedAt).toLocaleDateString() : "—"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          <p className="text-[10px] text-on-surface-variant/50 mt-3">{participants.length} registered participant{participants.length !== 1 ? "s" : ""}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}

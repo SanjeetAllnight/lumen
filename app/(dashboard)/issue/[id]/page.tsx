@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useGlobal, getStatusConfig, type Issue, type Comment } from '@/components/GlobalProvider';
 import { useToast } from '@/components/ToastProvider';
+import { useAuth } from '@/components/AuthProvider';
 
 function timeAgo(dateString: string | undefined | null): string {
   if (!dateString) return 'Just now';
@@ -41,6 +42,7 @@ export default function IssueDetailPage() {
   const id = params.id as string;
   const { upvoteIssue, addComment, getIssue, getComments, issues, currentUserId } = useGlobal();
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [issue, setIssue] = useState<Issue | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -77,14 +79,38 @@ export default function IssueDetailPage() {
     setNewComment("");
   };
 
-  const handleNotifyToggle = () => {
+  // Seed isNotified from Firestore subscribers array (persists across reload)
+  useEffect(() => {
+    if (!issue || !user) return;
+    setIsNotified((issue.subscribers ?? []).includes(user.uid));
+  }, [issue, user]);
+
+  const handleNotifyToggle = async () => {
+    if (!user) {
+      showToast('Sign in to subscribe to notifications', 'error', 'login');
+      return;
+    }
     const next = !isNotified;
-    setIsNotified(next);
-    showToast(
-      next ? 'You will be notified of updates for this issue' : 'Notifications cancelled',
-      next ? 'success' : 'info',
-      'notifications'
-    );
+    setIsNotified(next);  // optimistic
+    try {
+      const body = next
+        ? { addSubscriber: user.uid }
+        : { removeSubscriber: user.uid };
+      const res = await fetch(`/api/issues/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('patch failed');
+      showToast(
+        next ? 'You will be notified of updates for this issue' : 'Notifications cancelled',
+        next ? 'success' : 'info',
+        'notifications'
+      );
+    } catch {
+      setIsNotified(!next);  // rollback on error
+      showToast('Failed to update notification preference', 'error', 'error');
+    }
   };
 
   const handleReply = (authorName: string) => {

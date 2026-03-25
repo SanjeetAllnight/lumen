@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/components/AuthProvider";
+import JoinEventModal from "@/components/JoinEventModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,14 +22,45 @@ type Event = {
   createdBy: string;
 };
 
+type JoinTarget = { id: string; title: string };
+
 // ─── Event Card ───────────────────────────────────────────────────────────────
 
-function EventCard({ event }: { event: Event }) {
+function EventCard({ event, onJoin }: { event: Event; onJoin: (target: JoinTarget) => void }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const formattedDate = event.date
     ? new Date(event.date).toLocaleDateString("en-IN", {
         day: "numeric", month: "short", year: "numeric",
       })
     : "Date TBD";
+
+  const [participantCount, setParticipantCount] = useState<number | null>(null);
+  const [hasJoined, setHasJoined] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadParticipants() {
+      try {
+        const [listRes, joinedRes] = await Promise.all([
+          fetch(`/api/events/${event.id}/participants`),
+          user ? fetch(`/api/events/${event.id}/participants?userId=${user.uid}`) : Promise.resolve(null),
+        ]);
+        if (listRes.ok && alive)  { const d = await listRes.json(); setParticipantCount(Array.isArray(d) ? d.length : 0); }
+        if (joinedRes?.ok && alive){ const d = await joinedRes.json(); setHasJoined(d.joined ?? false); }
+      } catch { /* silently ignore */ }
+    }
+    loadParticipants();
+    return () => { alive = false; };
+  }, [event.id, user]);
+
+  const handleRefreshCount = async () => {
+    try {
+      const res = await fetch(`/api/events/${event.id}/participants`);
+      if (res.ok) { const d = await res.json(); setParticipantCount(Array.isArray(d) ? d.length : 0); }
+      setHasJoined(true);
+    } catch { /* ignore */ }
+  };
 
   return (
     <div className="glass-panel rounded-[2.5rem] overflow-hidden flex flex-col glow-border border border-white/5 group">
@@ -49,6 +83,15 @@ function EventCard({ event }: { event: Event }) {
             {formattedDate}
           </span>
         </div>
+        {/* Participant count chip */}
+        {participantCount !== null && participantCount > 0 && (
+          <div className="absolute top-4 right-4">
+            <span className="text-[10px] font-bold text-primary bg-surface-dim/80 backdrop-blur-md border border-primary/20 px-3 py-1 rounded-full flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">group</span>
+              {participantCount} interested
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -88,6 +131,26 @@ function EventCard({ event }: { event: Event }) {
             </div>
           )}
         </div>
+
+        {/* Join button — only shown to regular users */}
+        {user && !isAdmin && (
+          <button
+            onClick={() => {
+              if (!hasJoined) onJoin({ id: event.id, title: event.title });
+            }}
+            disabled={hasJoined}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all btn-tap ${
+              hasJoined
+                ? "bg-secondary/15 text-secondary border border-secondary/25 cursor-default"
+                : "bg-primary text-on-primary hover:brightness-110 shadow-lg shadow-primary/20 active:scale-95"
+            }`}
+          >
+            <span className="material-symbols-outlined text-base" style={hasJoined ? { fontVariationSettings: "'FILL' 1" } : {}}>
+              {hasJoined ? "check_circle" : "group_add"}
+            </span>
+            {hasJoined ? "Registered ✓" : "I'm Interested"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -399,20 +462,36 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [joinTarget, setJoinTarget] = useState<JoinTarget | null>(null);
 
-  const fetchEvents = useCallback(async () => {
+  // Real-time listener for approved events
+  useEffect(() => {
     setLoading(true);
-    try {
-      const res = await fetch("/api/events");
-      if (res.ok) setEvents(await res.json());
-    } catch (e) {
-      console.error("[EventsPage] fetchEvents:", e);
-    } finally {
-      setLoading(false);
-    }
+    const unsub = onSnapshot(
+      query(collection(db, "events"), orderBy("createdAt", "desc")),
+      (snap) => {
+        const data: Event[] = snap.docs
+          .map((d) => {
+            const raw = d.data();
+            return {
+              ...raw,
+              id: d.id,
+              date: raw.date?.toDate?.().toISOString?.() ?? raw.date ?? null,
+            } as Event;
+          })
+          .filter((e) => e.status === "approved");
+        setEvents(data);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("[EventsPage] onSnapshot error:", err);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
-  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+  const handleJoin = (target: JoinTarget) => setJoinTarget(target);
 
   return (
     <div className="md:px-12 w-full pb-12">
@@ -424,7 +503,7 @@ export default function EventsPage() {
         <div>
           <span className="text-primary font-bold tracking-[0.2em] text-[10px] uppercase block mb-2">Campus Life</span>
           <h1 className="font-headline text-4xl font-bold text-on-surface tracking-tight">Events</h1>
-          <p className="text-on-surface-variant text-sm mt-1">Discover and explore what's happening on campus</p>
+          <p className="text-on-surface-variant text-sm mt-1">Discover and explore what&apos;s happening on campus</p>
         </div>
         {/* Add Event Button */}
         {user && !isAdmin && (
@@ -453,7 +532,7 @@ export default function EventsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} onJoin={handleJoin} />
           ))}
         </div>
       )}
@@ -462,10 +541,24 @@ export default function EventsPage() {
       {showModal && user && (
         <AddEventModal
           onClose={() => setShowModal(false)}
-          onSubmitted={fetchEvents}
+          onSubmitted={() => { /* real-time listener auto-refreshes */ }}
           userId={user.uid}
+        />
+      )}
+
+      {/* Join Event Modal */}
+      {joinTarget && user && (
+        <JoinEventModal
+          eventId={joinTarget.id}
+          eventTitle={joinTarget.title}
+          onClose={() => setJoinTarget(null)}
+          onJoined={() => {
+            // EventCard handles its own count refresh via handleRefreshCount
+            setJoinTarget(null);
+          }}
         />
       )}
     </div>
   );
 }
+

@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { storage, db } from "@/lib/firebase";
 import { useToast } from "./ToastProvider";
 import { useAuth } from "./AuthProvider";
 
@@ -28,6 +29,7 @@ export type Issue = {
   updates?: { status: string; note: string; timestamp: string }[];
   upvotes: number;
   upvotedBy?: string[];
+  subscribers?: string[];
   authorName?: string;
   createdAt: string;
   comments?: Comment[];
@@ -35,6 +37,7 @@ export type Issue = {
   priority?: "low" | "medium" | "high" | "critical";
   imageUrl?: string;
 };
+
 
 export type CampusEvent = {
   id: string;
@@ -116,24 +119,51 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   // Compute it once per render
   const currentUserId = (user?.uid) ?? getAnonUserId();
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [issueRes, eventRes] = await Promise.all([
-        fetch("/api/issues"),
-        fetch("/api/events"),
-      ]);
-      const issueData: Issue[] = issueRes.ok ? await issueRes.json() : [];
-      const eventData: CampusEvent[] = eventRes.ok ? await eventRes.json() : [];
-      setIssues(issueData);
-      setEvents(eventData);
-    } catch (err) {
-      console.error("[GlobalProvider] fetchData:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  // ── Real-time listeners ───────────────────────────────────────────────────────
+  useEffect(() => {
+    // Issues
+    const issuesUnsub = onSnapshot(
+      query(collection(db, "issues"), orderBy("createdAt", "desc")),
+      (snap) => {
+        const data: Issue[] = snap.docs.map((d) => {
+          const raw = d.data();
+          return {
+            ...raw,
+            id: d.id,
+            createdAt: raw.createdAt?.toDate?.().toISOString?.() ?? null,
+          } as Issue;
+        });
+        setIssues(data);
+        setIsLoading(false);
+      },
+      (err) => {
+        console.error("[GlobalProvider] issues onSnapshot error:", err);
+        setIsLoading(false);
+      }
+    );
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+    // Events (approved only)
+    const eventsUnsub = onSnapshot(
+      query(collection(db, "events"), orderBy("createdAt", "desc")),
+      (snap) => {
+        const data: CampusEvent[] = snap.docs
+          .map((d) => {
+            const raw = d.data();
+            return {
+              ...raw,
+              id: d.id,
+              createdAt: raw.createdAt?.toDate?.().toISOString?.() ?? null,
+              date: raw.date?.toDate?.().toISOString?.() ?? raw.date ?? null,
+            } as CampusEvent;
+          })
+          .filter((e: any) => e.status === "approved");
+        setEvents(data);
+      },
+      (err) => console.error("[GlobalProvider] events onSnapshot error:", err)
+    );
+
+    return () => { issuesUnsub(); eventsUnsub(); };
+  }, []);
 
   // Seed upvotedIssueIds from localStorage on first client render
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +38,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, technician, note, imageUrl, priority, aiSummary, category } = body;
+    const { status, technician, note, imageUrl, priority, aiSummary, category, addSubscriber, removeSubscriber } = body;
 
     const payload: Record<string, unknown> = {};
 
@@ -57,13 +57,47 @@ export async function PATCH(
           timestamp: new Date().toISOString(),
         });
       }
+
+      // ─── Notification Fan-out ────────────────────────────────────────────────
+      try {
+        const issueRef = doc(db, "issues", id);
+        const issueSnap = await getDoc(issueRef);
+        if (issueSnap.exists()) {
+          const issueData = issueSnap.data();
+          const subscribers = issueData.subscribers || [];
+          if (subscribers.length > 0) {
+            const notifCol = collection(db, "notifications");
+            const now = new Date().toISOString();
+            const title = issueData.title || "an issue";
+            const readableStatus = status.replace("_", " ").toUpperCase();
+            
+            await Promise.all(
+              subscribers.map((userId: string) =>
+                addDoc(notifCol, {
+                  userId,
+                  issueId: id,
+                  message: `Status updated to ${readableStatus} for: ${title}`,
+                  read: false,
+                  createdAt: now,
+                })
+              )
+            );
+          }
+        }
+      } catch (err) {
+        console.error("[PATCH /api/issues/[id]] Failed to fan-out notifications", err);
+      }
     }
 
-    // ─── Background async patches (image upload, AI classify) ──────────────────
-    if (imageUrl  !== undefined) payload.imageUrl  = imageUrl;
-    if (priority  !== undefined) payload.priority  = priority;
-    if (aiSummary !== undefined) payload.aiSummary = aiSummary;
-    if (category  !== undefined) payload.category  = category;
+    // ─── Background async patches (image upload, AI classify) ──────────────────────────────
+    if (imageUrl        !== undefined) payload.imageUrl  = imageUrl;
+    if (priority        !== undefined) payload.priority  = priority;
+    if (aiSummary       !== undefined) payload.aiSummary = aiSummary;
+    if (category        !== undefined) payload.category  = category;
+    // ─── Subscription (Notify Me) ───────────────────────────────────────────────────────
+    // arrayUnion de-dupes: adding existing userId is a no-op in Firestore
+    if (addSubscriber    !== undefined) payload.subscribers = arrayUnion(addSubscriber);
+    if (removeSubscriber !== undefined) payload.subscribers = arrayRemove(removeSubscriber);
 
     if (Object.keys(payload).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
