@@ -17,8 +17,8 @@ export default function Sidebar() {
   ];
 
   const adminLinks = [
-    { name: "Issue Management", href: "/admin?tab=issues", icon: "gavel" },
-    { name: "Pending Events", href: "/admin?tab=events", icon: "pending_actions" },
+    { name: "Issue Management", href: "/admin", icon: "gavel" },
+    { name: "Pending Events", href: "/admin/pending-events", icon: "pending_actions" },
   ];
 
   return (
@@ -50,7 +50,7 @@ export default function Sidebar() {
             </h3>
             <div className="space-y-1">
               {adminLinks.map((link) => {
-                const isActive = pathname.startsWith("/admin");
+                const isActive = pathname === link.href || (link.href === "/admin" && pathname === "/admin") || pathname.startsWith(link.href + "/")|| (link.href !== "/admin" && pathname.startsWith(link.href));
                 return (
                   <Link
                     key={link.name}

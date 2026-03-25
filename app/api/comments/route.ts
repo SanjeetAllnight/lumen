@@ -5,7 +5,6 @@ import {
   addDoc,
   query,
   where,
-  orderBy,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -27,8 +26,7 @@ export async function GET(req: NextRequest) {
 
     const q = query(
       collection(db, "comments"),
-      where("issueId", "==", issueId),
-      orderBy("createdAt", "asc")
+      where("issueId", "==", issueId)
     );
 
     const snapshot = await getDocs(q);
@@ -37,6 +35,13 @@ export async function GET(req: NextRequest) {
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate?.().toISOString?.() ?? null,
     }));
+
+    // In-memory sort by createdAt asc (avoids composite index requirement)
+    comments.sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return ta - tb;
+    });
 
     return NextResponse.json(comments);
   } catch (error) {

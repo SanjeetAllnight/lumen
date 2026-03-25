@@ -188,7 +188,7 @@ function ZoneModal({ zone, issues, events, onClose }: {
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="flex items-center gap-1 text-[11px] text-slate-500">
                       <span className="material-symbols-outlined text-[13px] text-primary">thumb_up</span>
-                      {issue.upvotes.toLocaleString()}
+                      {(issue.upvotes ?? 0).toLocaleString()}
                     </span>
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${conf.bgLight} ${conf.color}`}>
                       {conf.label}
@@ -224,7 +224,7 @@ function ZoneModal({ zone, issues, events, onClose }: {
                     )}
                     <span className="text-[11px] text-slate-500 flex items-center gap-1">
                       <span className="material-symbols-outlined text-[13px]">group</span>
-                      {event.attendees.toLocaleString()}
+                      {(event.attendees ?? 0).toLocaleString()}
                     </span>
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">{event.category}</span>
                   </div>

@@ -293,7 +293,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="mt-2 flex items-center gap-1 text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
                     <span className="material-symbols-outlined text-xs">group</span>
-                    {event.attendees.toLocaleString()} expected
+                    {(event.attendees ?? 0).toLocaleString()} expected
                   </div>
                 </div>
               </div>

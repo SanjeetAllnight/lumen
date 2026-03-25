@@ -81,17 +81,10 @@ export const getStatusConfig = (status: string) => {
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 
-const STATIC_ACTIVITIES: Activity[] = [
-  { id: "a1", type: "issue", title: "⚠️ Multiple reports incoming: Block A", description: "Our team is heading to elevator shaft 4 right now.", tag: "Active Response", icon: "construction", timestamp: "JUST NOW" },
-  { id: "a2", type: "alert", title: "🚨 Network Drop: Critical Node 7", description: "The Central Library's main router just went dark. IT is on it.", tag: "Service Interruption", icon: "wifi_off", timestamp: "2m AGO" },
-  { id: "a3", type: "event", title: "⚡ Spike detected: East Plaza density", description: "Whoa, it's getting crowded! Foot traffic near the auditorium is way up.", tag: "Monitoring", icon: "stadium", timestamp: "5m AGO" },
-  { id: "a4", type: "resolved", title: "✅ Gate 4 is back in action", description: "Mechanical sensor recalibrated. Vehicle access is back to normal.", tag: "Resolved", icon: "check_circle", timestamp: "15m AGO" },
-];
-
 export function GlobalProvider({ children }: { children: ReactNode }) {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [events, setEvents] = useState<CampusEvent[]>([]);
-  const [activities, setActivities] = useState<Activity[]>(STATIC_ACTIVITIES);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
   const { user } = useAuth();
@@ -104,18 +97,8 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
       ]);
       const issueData: Issue[] = issueRes.ok ? await issueRes.json() : [];
       const eventData: CampusEvent[] = eventRes.ok ? await eventRes.json() : [];
-
-      // Auto-seed if both are empty
-      if (issueData.length === 0 && eventData.length === 0) {
-        // Only seed events, never auto-seed issues
-        await fetch("/api/seed", { method: "POST" });
-        const sE = await fetch("/api/events");
-        setIssues([]);
-        setEvents(sE.ok ? await sE.json() : []);
-      } else {
-        setIssues(issueData);
-        setEvents(eventData);
-      }
+      setIssues(issueData);
+      setEvents(eventData);
     } catch (err) {
       console.error("[GlobalProvider] fetchData:", err);
     } finally {
