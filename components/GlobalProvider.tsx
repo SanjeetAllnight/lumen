@@ -232,13 +232,35 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   const addIssue = useCallback(
     async (newIssue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">, image?: File) => {
       try {
-        // ─── Step 1: Save complaint with rule-based severity (instant) ───────────
+        // ─── Step 1: Upload image FIRST (synchronously awaited)
+        let imageUrl = "";
+        if (image) {
+          const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+          if (allowed.includes(image.type)) {
+            try {
+              const ext = image.name.split(".").pop() || "jpg";
+              const storageRef = ref(storage, `issues/${Date.now()}.${ext}`);
+              await uploadBytes(storageRef, image, { contentType: image.type });
+              imageUrl = await getDownloadURL(storageRef);
+              console.log("[addIssue] Image uploaded:", imageUrl);
+            } catch (imgErr) {
+              console.error("[addIssue] Image upload failed:", imgErr);
+              showToast("Failed to upload image. Submitting without it.", "error", "error");
+            }
+          } else {
+            console.warn("[addIssue] Rejected unsupported file format:", image.type);
+            showToast("Unsupported image format. Submitting without it.", "error", "error");
+          }
+        }
+
+        // ─── Step 2: Save complaint with rule-based severity and imageUrl
         const formData = new FormData();
         formData.append("title",       newIssue.title);
         formData.append("description", newIssue.description);
         formData.append("location",    newIssue.location    || "");
         formData.append("category",    newIssue.category    || "Facility");
         formData.append("authorName",  user?.displayName    || "Student Reporter");
+        if (imageUrl) formData.append("imageUrl", imageUrl);
 
         const res = await fetch("/api/issues", { method: "POST", body: formData });
         if (!res.ok) throw new Error("Failed to create issue");
@@ -254,36 +276,6 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
           tag:         created.category,
           icon:        "campaign",
         });
-
-        // ─── Step 2: Upload image in background ─────────────────────────────────
-        if (image) {
-          const allowed = ["image/jpeg", "image/jpg", "image/png"];
-          if (allowed.includes(image.type)) {
-            (async () => {
-              try {
-                const ext        = image.name.split(".").pop() || "jpg";
-                const storageRef = ref(storage, `issues/${Date.now()}.${ext}`);
-                await uploadBytes(storageRef, image, { contentType: image.type });
-                const imageUrl   = await getDownloadURL(storageRef);
-                // Patch Firestore doc
-                await fetch(`/api/issues/${created.id}`, {
-                  method:  "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body:    JSON.stringify({ imageUrl }),
-                });
-                // Patch local state so card shows image without reload
-                setIssues((prev) =>
-                  prev.map((i) => (i.id === created.id ? { ...i, imageUrl } : i))
-                );
-                console.log("[addIssue] Image patched:", imageUrl);
-              } catch (imgErr) {
-                console.error("[addIssue] Background image upload failed:", imgErr);
-              }
-            })();
-          } else {
-            console.warn("[addIssue] Rejected non-JPG/PNG file:", image.type);
-          }
-        }
 
       } catch (err) {
         console.error("[addIssue]", err);

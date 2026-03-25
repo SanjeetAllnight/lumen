@@ -7,7 +7,8 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { classifySeverity, classifyCategory, generateSummary } from "@/lib/classifier";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,21 @@ export async function POST(req: NextRequest) {
       category    = (form.get("category")    as string) || "";
       authorName  = (form.get("authorName")  as string) || "";
       imageUrl    = (form.get("imageUrl")    as string) || "";
+      
+      const imageFile = form.get("image") as File | null;
+      if (imageFile && typeof imageFile !== "string" && imageFile.name) {
+        try {
+          const ext = imageFile.name.split(".").pop() || "png";
+          const storageRef = ref(storage, `issues/${Date.now()}_backend.${ext}`);
+          const arrayBuffer = await imageFile.arrayBuffer();
+          const buffer = new Uint8Array(arrayBuffer);
+          await uploadBytes(storageRef, buffer, { contentType: imageFile.type });
+          imageUrl = await getDownloadURL(storageRef);
+          console.log("[POST /api/issues] Backend successfully uploaded image:", imageUrl);
+        } catch (imgUploadErr) {
+          console.error("[POST /api/issues] Failed to upload image from multipart form:", imgUploadErr);
+        }
+      }
     } else {
       const body  = await req.json();
       title       = body.title       || "";

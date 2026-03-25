@@ -224,7 +224,7 @@ export default function AdminIntelligencePage() {
                 const conf = getStatusConfig(issue.status);
                 const isSelected = selectedIssueIds.includes(issue.id);
                 if (issue.imageUrl) {
-                  console.log("Complaint Image:", issue.imageUrl);
+                  console.log("Admin Issue Image URL:", issue.imageUrl);
                 }
                 return (
                   <div key={issue.id} className={`glass-panel rounded-2xl p-6 border transition-all relative overflow-hidden group flex gap-5 ${isSelected ? 'border-primary/50 bg-primary/5' : `border-l-2 border-l-${conf.color.replace('text-', '')} border-white/5`}`}>
