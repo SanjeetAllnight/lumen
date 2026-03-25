@@ -3,10 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-<<<<<<< HEAD
 import { useGlobal, getStatusConfig, type Issue, type Comment } from '@/components/GlobalProvider';
-=======
-import { useGlobal, type Issue, type Comment } from '@/components/GlobalProvider';
 import { useToast } from '@/components/ToastProvider';
 
 function timeAgo(dateString: string | undefined | null): string {
@@ -38,7 +35,6 @@ function StatusBadge({ status }: { status: string }) {
     <span className="px-3 py-1 bg-error/20 backdrop-blur-md border border-error/30 text-error text-[10px] font-bold rounded-full uppercase tracking-tighter inline-block">Reported</span>
   );
 }
->>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
 
 export default function IssueDetailPage() {
   const params = useParams();
@@ -114,50 +110,20 @@ export default function IssueDetailPage() {
     );
   }
 
-<<<<<<< HEAD
   const currentStatusConf = getStatusConfig(issue.status);
   const timeline = [...(issue.updates || [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   const fullTimeline = [...timeline, { status: "reported", note: `Issue reported by Alex Rivera`, timestamp: issue.createdAt }];
-=======
-  const statusDotColor = issue.status === 'resolved'
-    ? 'bg-secondary shadow-[0_0_10px_rgba(74,248,227,0.8)]'
-    : issue.status === 'in_progress'
-      ? 'bg-primary shadow-[0_0_10px_rgba(199,153,255,0.8)]'
-      : 'bg-error shadow-[0_0_10px_rgba(255,100,100,0.8)]';
-
-  const statusTextColor = issue.status === 'resolved' ? 'text-secondary'
-    : issue.status === 'in_progress' ? 'text-primary' : 'text-error';
-
-  const statusLabel = issue.status === 'resolved' ? 'Resolved'
-    : issue.status === 'in_progress' ? 'In Progress' : 'Reported';
-
-  // Sort: highest likes first
   const sortedComments = [...comments].sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
->>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
 
   return (
     <div className="flex-1 md:p-10 max-w-7xl mx-auto w-full">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12 items-start">
         {/* LEFT: Main content */}
         <div className="lg:col-span-8 space-y-8">
-<<<<<<< HEAD
-          <div className="relative rounded-3xl overflow-hidden group">
-            <img 
-              className="w-full h-[400px] object-cover transition-transform duration-700 group-hover:scale-105" 
-              alt="broken elevator" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ1vZVAPBxZG0qHMWM1LGx8-ilepevop4Qdgw84Vf-VdF1RYEWPZGDEZargpGLnAGU73sxTeuiD4wReEZ_RMig-STa_AA_3mZOOVwQoQme4VSYEerWSFo4LzA7cVssQ4pcG1J9CZmoHTAbLQjIxSCeeDl2DzrqK9AbW5kK5XtIjHFTBBfy5OAqdXcV49ncpKnCrTvDdQ5jZ4bbPya6XzxtaX8Ee2zdds_LQAXJXKi72ixYa6WpbbBUWFpHharY6zCnsnp0rIUn1d4"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60"></div>
-            <div className="absolute bottom-6 left-6">
-              <span className={`px-3 py-1 ${currentStatusConf.bgLight} backdrop-blur-md border ${currentStatusConf.border}/30 ${currentStatusConf.color} text-[10px] font-bold rounded-full uppercase tracking-tighter mb-3 inline-block`}>{currentStatusConf.label}</span>
-              <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-surface leading-tight">{issue.title}</h1>
-=======
-
           {/* Issue hero (no fake image) */}
           <div className="relative rounded-3xl overflow-hidden border border-white/5 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 min-h-[220px] flex flex-col justify-end p-8">
             <div className="absolute inset-0 opacity-5">
               <div className="w-full h-full" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(199,153,255,0.5) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
->>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
             </div>
             <StatusBadge status={issue.status} />
             <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-surface leading-tight mt-3">{issue.title}</h1>
@@ -221,7 +187,6 @@ export default function IssueDetailPage() {
             <div className="flex items-center justify-between mb-8">
               <h3 className="font-headline font-bold text-on-surface">Live Status</h3>
               <div className="flex items-center gap-2">
-<<<<<<< HEAD
                 <span className={`w-2 h-2 rounded-full ${currentStatusConf.bg} shadow-[0_0_10px_currentColor] ${currentStatusConf.color} animate-pulse`}></span>
                 <span className={`text-[10px] font-bold ${currentStatusConf.color} uppercase tracking-widest`}>{currentStatusConf.label}</span>
               </div>
@@ -251,52 +216,6 @@ export default function IssueDetailPage() {
                   </div>
                 );
               })}
-=======
-                <span className={`w-2 h-2 rounded-full animate-pulse ${statusDotColor}`}></span>
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${statusTextColor}`}>{statusLabel}</span>
-              </div>
-            </div>
-
-            {/* Dynamic 3-step timeline */}
-            <div className="relative space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-primary before:via-primary/30 before:to-surface-variant">
-
-              {/* Step 3: Resolved */}
-              <div className="relative pl-10">
-                <div className={`absolute left-0 top-1 w-6 h-6 rounded-full border-2 z-10 flex items-center justify-center transition-all ${issue.status === 'resolved' ? 'bg-secondary border-secondary shadow-[0_0_15px_rgba(74,248,227,0.6)]' : 'bg-surface-variant border-outline-variant opacity-40'}`}>
-                  <span className={`material-symbols-outlined text-[14px] ${issue.status === 'resolved' ? 'text-on-secondary' : 'text-transparent'}`}>check</span>
-                </div>
-                <div className={issue.status === 'resolved' ? '' : 'opacity-40'}>
-                  <p className={`text-xs font-bold uppercase tracking-widest ${issue.status === 'resolved' ? 'text-secondary' : 'text-on-surface-variant'}`}>Resolved</p>
-                  <p className="text-[10px] text-on-surface-variant mt-0.5">{issue.status === 'resolved' ? 'Issue has been successfully fixed' : 'Awaiting completion'}</p>
-                </div>
-              </div>
-
-              {/* Step 2: In Progress */}
-              <div className="relative pl-10">
-                <div className={`absolute left-0 top-1 w-6 h-6 rounded-full border-2 z-10 flex items-center justify-center transition-all ${issue.status === 'in_progress' || issue.status === 'resolved' ? 'bg-primary border-primary shadow-[0_0_15px_rgba(199,153,255,0.6)]' : 'bg-surface-variant border-outline-variant opacity-40'}`}>
-                  <span className={`material-symbols-outlined text-[14px] ${issue.status === 'in_progress' || issue.status === 'resolved' ? 'text-on-primary' : 'text-transparent'}`}>handyman</span>
-                </div>
-                <div className={issue.status === 'in_progress' || issue.status === 'resolved' ? '' : 'opacity-40'}>
-                  <p className={`text-xs font-bold uppercase tracking-widest ${issue.status === 'in_progress' ? 'text-primary' : 'text-on-surface-variant'}`}>In Progress</p>
-                  <p className="text-[10px] text-on-surface-variant mt-0.5">
-                    {issue.status === 'in_progress' ? 'Maintenance crew dispatched to location' : issue.status === 'resolved' ? 'Work completed' : 'Pending review by administration'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 1: Reported */}
-              <div className="relative pl-10">
-                <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center z-10 shadow-[0_0_10px_rgba(199,153,255,0.4)]">
-                  <span className="material-symbols-outlined text-[14px] text-primary">report</span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-on-surface uppercase tracking-widest">Reported</p>
-                  <p className="text-[10px] text-on-surface-variant mt-0.5">
-                    {issue.status === 'reported' ? 'Has not been looked at yet' : 'Report received and logged'}
-                  </p>
-                </div>
-              </div>
->>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
             </div>
 
             <button

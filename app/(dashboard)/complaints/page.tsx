@@ -2,10 +2,6 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-<<<<<<< HEAD
-import { useGlobal, getStatusConfig } from '@/components/GlobalProvider';
-import { IssueListSkeleton, EmptyIssues } from '@/components/Skeletons';
-=======
 import { useGlobal, type Issue } from '@/components/GlobalProvider';
 import { useAuth } from '@/components/AuthProvider';
 import { IssueListSkeleton } from '@/components/Skeletons';
@@ -111,7 +107,7 @@ function TopIssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.M
     </div>
   );
 }
->>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
+
 
 export default function ComplaintsPage() {
   const { issues, upvoteIssue, isLoading } = useGlobal();
@@ -292,168 +288,7 @@ export default function ComplaintsPage() {
             </div>
           )}
         </div>
-<<<<<<< HEAD
-
-        {/* List Issue 2 */}
-        <div onClick={() => router.push('/issue/library-hvac')} className="xl:col-span-4 cursor-pointer">
-          <div className="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
-            <div className="flex justify-between items-start mb-6">
-              <div className="p-4 rounded-2xl bg-tertiary/20 text-tertiary shadow-lg shadow-tertiary/10">
-                <span className="material-symbols-outlined text-2xl">ac_unit</span>
-              </div>
-              <div className="bg-tertiary-fixed/10 text-tertiary-fixed px-3 py-1.5 rounded-full text-[10px] font-black border border-tertiary-fixed/30 uppercase tracking-widest">In Progress</div>
-            </div>
-            <h4 className="text-xl font-headline font-bold mb-3 group-hover:text-tertiary transition-colors">Library HVAC Malfunction</h4>
-            <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
-              <span className="text-tertiary/80 font-semibold">Summary from multiple reports:</span> The 3rd floor reading room temperature has reached 28°C. Reports indicate a potential compressor failure.
-            </p>
-            <div className="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                <button onClick={(e) => { e.stopPropagation(); upvoteIssue("library-hvac"); }} className="flex items-center gap-3 px-6 py-3 rounded-xl bg-tertiary/10 hover:bg-tertiary/20 text-tertiary transition-all shadow-lg shadow-tertiary/5 border border-tertiary/20">
-                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-                  <span className="text-lg font-bold">{issue2?.upvotes}</span>
-                </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue2?.affectedCount} STUDENTS AFFECTED</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Frustrated">!</button>
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Warning">!!</button>
-                  </div>
-                  <div className="flex -space-x-2">
-                    <div className="w-6 h-6 rounded-full border border-surface bg-slate-400"></div>
-                    <div className="w-6 h-6 rounded-full border border-surface bg-slate-500"></div>
-                  </div>
-                </div>
-                <button className="text-primary text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4">VIEW THREAD</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* List Issue 3 */}
-        <div onClick={() => router.push('/issue/water-cooler')} className="xl:col-span-4 cursor-pointer">
-          <div className="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
-            <div className="flex justify-between items-start mb-6">
-              <div className="p-4 rounded-2xl bg-secondary/20 text-secondary shadow-lg shadow-secondary/10">
-                <span className="material-symbols-outlined text-2xl">water_drop</span>
-              </div>
-              <div className="bg-secondary/10 text-secondary px-3 py-1.5 rounded-full text-[10px] font-black border border-secondary/30 uppercase tracking-widest">Scheduled</div>
-            </div>
-            <h4 className="text-xl font-headline font-bold mb-3 group-hover:text-secondary transition-colors">Cafeteria Water Cooler Filter</h4>
-            <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
-              <span className="text-secondary/80 font-semibold">Summary from multiple reports:</span> Maintenance scheduled for tomorrow at 10:00 AM. Routine replacement cycle exceeded.
-            </p>
-            <div className="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                <button onClick={(e) => { e.stopPropagation(); upvoteIssue("water-cooler"); }} className="flex items-center gap-3 px-6 py-3 rounded-xl bg-secondary/10 hover:bg-secondary/20 text-secondary transition-all shadow-lg shadow-secondary/5 border border-secondary/20">
-                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-                  <span className="text-lg font-bold">{issue3?.upvotes}</span>
-                </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue3?.affectedCount} STUDENTS AFFECTED</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Good Luck">+</button>
-                  </div>
-                  <div className="flex -space-x-2">
-                    <div className="w-6 h-6 rounded-full border border-surface bg-slate-600"></div>
-                  </div>
-                </div>
-                <button className="text-primary text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4">VIEW THREAD</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* List Issue 4 */}
-        <div onClick={() => router.push('/issue/gym-glass')} className="xl:col-span-4 cursor-pointer">
-          <div className="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
-            <div className="flex justify-between items-start mb-6">
-              <div className="p-4 rounded-2xl bg-error/20 text-error shadow-lg shadow-error/10">
-                <span className="material-symbols-outlined text-2xl">security</span>
-              </div>
-              <div className="bg-error/10 text-error px-3 py-1.5 rounded-full text-[10px] font-black border border-error/30 uppercase tracking-widest">New Report</div>
-            </div>
-            <h4 className="text-xl font-headline font-bold mb-3 group-hover:text-error transition-colors">Shattered Glass - Gym Entry</h4>
-            <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
-              <span className="text-error/80 font-semibold">Summary from multiple reports:</span> Safety hazard identified at Main Gym Entrance. Reported by 5 students in the last 10 minutes.
-            </p>
-            <div className="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                <button onClick={(e) => { e.stopPropagation(); upvoteIssue("gym-glass"); }} className="flex items-center gap-3 px-6 py-3 rounded-xl bg-error/10 hover:bg-error/20 text-error transition-all shadow-lg shadow-error/5 border border-error/20">
-                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-                  <span className="text-lg font-bold">{issue4?.upvotes}</span>
-                </button>
-                <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue4?.affectedCount} STUDENTS AFFECTED</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg">
-                    <button className="reaction-tooltip text-lg hover:scale-110" data-tooltip="Hazardous">!!</button>
-                  </div>
-                  <div className="flex -space-x-2">
-                    <div className="w-6 h-6 rounded-full border border-surface bg-slate-300"></div>
-                    <div className="w-6 h-6 rounded-full border border-surface bg-slate-700"></div>
-                  </div>
-                </div>
-                <button className="text-primary text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4">VIEW THREAD</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* New Issues Feed */}
-        {newIssues.map((issue) => {
-          const conf = getStatusConfig(issue.status);
-          return (
-            <div key={issue.id} onClick={() => router.push(`/issue/${issue.id}`)} className="xl:col-span-4 cursor-pointer">
-              <div className="glass-panel p-6 rounded-[2.5rem] border border-outline-variant/20 h-full flex flex-col card-interaction-hover group bg-surface-container/30">
-                <div className="flex justify-between items-start mb-6">
-                  <div className={`p-4 rounded-2xl ${conf.bgLight} ${conf.color} shadow-lg ${conf.shadow}`}>
-                    <span className="material-symbols-outlined text-2xl">{conf.icon}</span>
-                  </div>
-                  <div className={`${conf.bgLight} ${conf.color} px-3 py-1.5 rounded-full text-[10px] font-black border ${conf.border}/30 uppercase tracking-widest`}>{conf.label}</div>
-                </div>
-                <h4 className={`text-xl font-headline font-bold mb-3 group-hover:${conf.color} transition-colors`}>{issue.title}</h4>
-                <p className="text-sm text-on-surface-variant mb-6 leading-relaxed flex-1">
-                  {issue.description}
-                </p>
-                <div className="mt-auto pt-6 border-t border-outline-variant/10 flex flex-col gap-6">
-                  <div className="flex items-center justify-between">
-                    <button onClick={(e) => { e.stopPropagation(); upvoteIssue(issue.id); }} className={`flex items-center gap-3 px-6 py-3 rounded-xl ${conf.bgLight} hover:bg-white/10 ${conf.color} transition-all shadow-lg ${conf.shadow} border ${conf.border}/20`}>
-                    <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-                    <span className="text-lg font-bold">{issue.upvotes}</span>
-                  </button>
-                  <span className="text-[11px] font-black uppercase tracking-tighter text-on-surface-variant">{issue.affectedCount} STUDENTS AFFECTED</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-2 bg-black/20 p-1.5 rounded-lg text-xs font-bold text-on-surface-variant px-3 py-1 uppercase tracking-widest leading-none">
-                      {issue.category}
-                    </div>
-                  </div>
-                  <button className={`${conf.color} text-[10px] font-black tracking-[0.2em] uppercase hover:underline decoration-2 underline-offset-4`}>VIEW THREAD</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )})}
-
-      </div>
-
-      {/* Pagination */}
-      <div className="mt-20 mb-8 flex justify-center">
-        <button className="group flex flex-col items-center gap-2">
-          <span className="text-[10px] font-black tracking-[0.4em] uppercase text-on-surface-variant group-hover:text-primary transition-colors">Load History</span>
-          <span className="material-symbols-outlined text-primary group-hover:translate-y-2 transition-transform duration-300">keyboard_double_arrow_down</span>
-        </button>
-      </div>
-=======
       )}
->>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
     </div>
   );
 }

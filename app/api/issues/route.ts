@@ -55,15 +55,7 @@ export async function POST(req: NextRequest) {
       location: location || "Unknown",
       category: category || "General",
       authorName: authorName || "Student Reporter",
-      upvotes: 0,
-<<<<<<< HEAD
-      affectedCount: 1,
       status: "reported",
-      updates: [],
-=======
-      status: "reported",
->>>>>>> 80add7c75b2a2aadf06d07cdb753715a2222604e
-      createdAt: Timestamp.now(),
     };
 
     const docRef = await addDoc(collection(db, "issues"), newIssue);
