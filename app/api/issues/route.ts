@@ -7,9 +7,7 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
-import { generateSummary, classifyIssue } from "@/lib/gemini";
+import { db } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -32,77 +30,50 @@ export async function GET() {
   }
 }
 
-// POST /api/issues — create issue, run AI classification, upload image
-// Accepts multipart/form-data OR application/json
+// POST /api/issues — save complaint instantly with NO AI wait and NO image wait.
+// AI classification and image upload both happen async on the client AFTER this returns.
 export async function POST(req: NextRequest) {
   try {
-    let title = "", description = "", location = "", category = "", authorName = "";
-    let imageFile: Blob | null = null;
-    let imageFileName = "";
+    let title = "", description = "", location = "", category = "", authorName = "", imageUrl = "";
 
     const contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("multipart/form-data")) {
       const form = await req.formData();
-      title = (form.get("title") as string) || "";
+      title       = (form.get("title")       as string) || "";
       description = (form.get("description") as string) || "";
-      location = (form.get("location") as string) || "";
-      category = (form.get("category") as string) || "";
-      authorName = (form.get("authorName") as string) || "";
-      const file = form.get("image") as File | null;
-      if (file && file.size > 0) {
-        imageFile = file;
-        imageFileName = file.name;
-      }
+      location    = (form.get("location")    as string) || "";
+      category    = (form.get("category")    as string) || "";
+      authorName  = (form.get("authorName")  as string) || "";
+      // Client may pass a pre-uploaded Firebase Storage URL
+      imageUrl    = (form.get("imageUrl")    as string) || "";
     } else {
-      const body = await req.json();
-      title = body.title || "";
+      const body  = await req.json();
+      title       = body.title       || "";
       description = body.description || "";
-      location = body.location || "";
-      category = body.category || "";
-      authorName = body.authorName || "";
+      location    = body.location    || "";
+      category    = body.category    || "";
+      authorName  = body.authorName  || "";
+      imageUrl    = body.imageUrl    || "";
     }
 
     if (!title || !description) {
       return NextResponse.json({ error: "title and description are required" }, { status: 400 });
     }
 
-    // Run AI classification + summary in parallel
-    const [aiSummary, classification] = await Promise.all([
-      generateSummary(description),
-      classifyIssue(title, description),
-    ]);
-
-    // Upload image to Firebase Storage if provided
-    let imageUrl = "";
-    if (imageFile) {
-      try {
-        const ext = imageFileName.split(".").pop() || "jpg";
-        const storageRef = ref(storage, `issues/${Date.now()}.${ext}`);
-        const buffer = await imageFile.arrayBuffer();
-        await uploadBytes(storageRef, new Uint8Array(buffer), {
-          contentType: imageFile.type || "image/jpeg",
-        });
-        imageUrl = await getDownloadURL(storageRef);
-      } catch (imgErr) {
-        console.error("[POST /api/issues] Image upload failed:", imgErr);
-        // Non-fatal — continue without image
-      }
-    }
-
+    // Write to Firestore immediately — priority/aiSummary patched later by /classify
     const newIssue = {
       title,
       description,
-      aiSummary,
-      location: location || "Unknown",
-      // AI-determined fields (override user-provided category with AI's)
-      category: classification.category || category || "Facility",
-      priority: classification.priority,
+      aiSummary:  "",
+      location:   location   || "Unknown",
+      category:   category   || "Facility",
+      priority:   null,       // filled async by POST /api/issues/[id]/classify
       authorName: authorName || "Student Reporter",
-      status: "reported",
-      upvotes: 0,
-      imageUrl,
-      createdAt: Timestamp.now(),
+      status:     "reported",
+      upvotes:    0,
+      imageUrl:   imageUrl   || "",
+      createdAt:  Timestamp.now(),
     };
 
     const docRef = await addDoc(collection(db, "issues"), newIssue);

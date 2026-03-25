@@ -57,33 +57,50 @@ function priorityBadge(priority?: string) {
 }
 function IssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.MouseEvent) => void }) {
   const router = useRouter();
+  const [imgError, setImgError] = useState(false);
   return (
     <div
       onClick={() => router.push(`/issue/${issue.id}`)}
-      className="glass-panel p-6 rounded-[2rem] border border-outline-variant/15 bg-surface-container/30 hover:border-primary/25 hover:bg-surface-container/50 transition-all duration-300 cursor-pointer flex flex-col h-full group"
+      className="glass-panel rounded-[2rem] border border-outline-variant/15 bg-surface-container/30 hover:border-primary/25 hover:bg-surface-container/50 transition-all duration-300 cursor-pointer flex flex-col h-full group overflow-hidden"
     >
-      <div className="flex flex-wrap justify-between items-start mb-3 gap-2">
-        <div className="flex flex-wrap gap-1.5">
-          <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
-            {statusLabel(issue.status)}
-          </span>
-          {priorityBadge(issue.priority)}
+      {/* Evidence image — hidden if URL missing or fails to load */}
+      {issue.imageUrl && !imgError && (
+        <div className="w-full h-40 overflow-hidden flex-shrink-0">
+          <img
+            src={issue.imageUrl}
+            alt={issue.title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={() => setImgError(true)}
+          />
         </div>
-        <span className="text-[10px] text-on-surface-variant/60">{timeAgo(issue.createdAt)}</span>
-      </div>
-      <h4 className="text-base font-headline font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{issue.title}</h4>
-      <p className="text-xs text-on-surface-variant leading-relaxed flex-1 line-clamp-3">{issue.aiSummary || issue.description}</p>
-      <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
-        <button
-          onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:scale-95"
-        >
-          <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-          <span className="text-sm font-bold">{issue.upvotes}</span>
-        </button>
-        <div className="flex items-center gap-2 text-on-surface-variant text-[11px]">
-          <span className="material-symbols-outlined text-sm">location_on</span>
-          <span className="font-medium">{issue.location}</span>
+      )}
+      <div className="p-6 flex flex-col flex-1">
+        <div className="flex flex-wrap justify-between items-start mb-3 gap-2">
+          <div className="flex flex-wrap gap-1.5">
+            <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
+              {statusLabel(issue.status)}
+            </span>
+            {issue.priority == null
+              ? <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/10 text-on-surface-variant/50 bg-white/5 animate-pulse">Processing…</span>
+              : priorityBadge(issue.priority)
+            }
+          </div>
+          <span className="text-[10px] text-on-surface-variant/60">{timeAgo(issue.createdAt)}</span>
+        </div>
+        <h4 className="text-base font-headline font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{issue.title}</h4>
+        <p className="text-xs text-on-surface-variant leading-relaxed flex-1 line-clamp-3">{issue.aiSummary || issue.description}</p>
+        <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+          <button
+            onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
+            <span className="text-sm font-bold">{issue.upvotes}</span>
+          </button>
+          <div className="flex items-center gap-2 text-on-surface-variant text-[11px]">
+            <span className="material-symbols-outlined text-sm">location_on</span>
+            <span className="font-medium">{issue.location}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -92,35 +109,49 @@ function IssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.Mous
 
 function TopIssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.MouseEvent) => void }) {
   const router = useRouter();
+  const [imgError, setImgError] = useState(false);
   return (
     <div
       onClick={() => router.push(`/issue/${issue.id}`)}
-      className="glass-panel p-8 rounded-[2.5rem] border-2 border-error/30 bg-gradient-to-br from-error/8 via-surface-container/50 to-surface-container shadow-xl shadow-error/10 cursor-pointer hover:border-error/50 transition-all duration-300 group"
+      className="glass-panel rounded-[2.5rem] border-2 border-error/30 bg-gradient-to-br from-error/8 via-surface-container/50 to-surface-container shadow-xl shadow-error/10 cursor-pointer hover:border-error/50 transition-all duration-300 group overflow-hidden"
     >
-      <div className="flex items-center gap-3 mb-5">
-        <div className="flex items-center gap-2 bg-error text-on-error px-3 py-1.5 rounded-full shadow-lg shadow-error/30">
-          <span className="w-2 h-2 rounded-full bg-on-error animate-ping" />
-          <span className="text-[10px] font-black uppercase tracking-wider">Urgent Priority</span>
+      {/* Evidence image — full-width banner, hidden if URL missing or fails to load */}
+      {issue.imageUrl && !imgError && (
+        <div className="w-full h-52 overflow-hidden">
+          <img
+            src={issue.imageUrl}
+            alt={issue.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={() => setImgError(true)}
+          />
         </div>
-        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
-          {statusLabel(issue.status)}
-        </span>
-      </div>
-      <h3 className="text-3xl font-headline font-bold mb-3 leading-tight group-hover:text-error/90 transition-colors">{issue.title}</h3>
-      <p className="text-on-surface-variant leading-relaxed mb-6 text-sm line-clamp-3">{issue.aiSummary || issue.description}</p>
-      <div className="flex items-center justify-between pt-6 border-t border-outline-variant/20">
-        <button
-          onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
-          className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-primary text-on-primary font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/30"
-        >
-          <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-          <span className="text-xl">{issue.upvotes}</span>
-        </button>
-        <div className="flex items-center gap-2 text-on-surface-variant text-sm">
-          <span className="material-symbols-outlined text-base">location_on</span>
-          <span className="font-medium">{issue.location}</span>
-          <span className="mx-2 text-outline-variant">·</span>
-          <span>{timeAgo(issue.createdAt)}</span>
+      )}
+      <div className="p-8">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-2 bg-error text-on-error px-3 py-1.5 rounded-full shadow-lg shadow-error/30">
+            <span className="w-2 h-2 rounded-full bg-on-error animate-ping" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Urgent Priority</span>
+          </div>
+          <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
+            {statusLabel(issue.status)}
+          </span>
+        </div>
+        <h3 className="text-3xl font-headline font-bold mb-3 leading-tight group-hover:text-error/90 transition-colors">{issue.title}</h3>
+        <p className="text-on-surface-variant leading-relaxed mb-6 text-sm line-clamp-3">{issue.aiSummary || issue.description}</p>
+        <div className="flex items-center justify-between pt-6 border-t border-outline-variant/20">
+          <button
+            onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
+            className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-primary text-on-primary font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/30"
+          >
+            <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
+            <span className="text-xl">{issue.upvotes}</span>
+          </button>
+          <div className="flex items-center gap-2 text-on-surface-variant text-sm">
+            <span className="material-symbols-outlined text-base">location_on</span>
+            <span className="font-medium">{issue.location}</span>
+            <span className="mx-2 text-outline-variant">·</span>
+            <span>{timeAgo(issue.createdAt)}</span>
+          </div>
         </div>
       </div>
     </div>

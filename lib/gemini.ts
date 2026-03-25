@@ -79,45 +79,109 @@ Original Description: ${description}`;
 }
 
 /**
- * Classifies a campus issue by category and priority based on title + description.
- * Called server-side after issue is submitted.
+ * Classifies a campus issue by category and priority using Gemini AI.
+ * Called server-side from POST /api/issues/[id]/classify.
+ *
+ * Returns null priority if classification fails — callers should NOT persist
+ * a wrong default; the issue will simply show "Processing…" in the UI.
  */
 export async function classifyIssue(
   title: string,
   description: string
-): Promise<{ category: string; priority: "low" | "medium" | "high" | "critical" }> {
-  const fallback = { category: "Facility", priority: "low" as const };
+): Promise<{ category: string; priority: "low" | "medium" | "high" | "critical" | null }> {
+  const fallback = { category: "Facility", priority: null as null };
   if (!process.env.GEMINI_API_KEY) return fallback;
+
   try {
     const model = genAI.getGenerativeModel({ model: MODEL });
-    const prompt = `You are a campus facility management AI. Classify this student-reported issue.
 
+    const prompt = `You are an AI assistant for a college campus facility management system.
+Your job is to classify the SEVERITY and CATEGORY of a student-reported issue.
+
+━━━ SEVERITY RULES ━━━
+
+CRITICAL — Immediate danger or total failure. Must be fixed within hours.
+Examples:
+  • Exposed or broken electric wire
+  • Flooded area, major water leakage
+  • Lift/elevator not working in an emergency
+  • Fire, smoke, or chemical hazard
+  • Structural damage to building
+  • Student health emergency in campus
+
+HIGH — Major disruption affecting many students. Needs same-day attention.
+Examples:
+  • No electricity in a classroom/lab for an entire day
+  • No drinking water available in a department
+  • Garbage not collected for multiple days causing hygiene issues
+  • WiFi/internet down in the whole department
+  • Projector/smartboard broken in a classroom used by many
+  • Excessive student stress or mental health concerns at scale
+
+MEDIUM — Noticeable issue affecting a group, not immediately dangerous.
+Examples:
+  • Broken chair or desk in classroom
+  • Slow or intermittent internet
+  • Washroom needs deep cleaning
+  • Fan or light not working in one room
+  • Canteen serving poor quality food
+  • Single printer/scanner out of order
+
+LOW — Minor cosmetic or individual inconvenience.
+Examples:
+  • Plastic bottles or litter lying around
+  • Paint chipping off wall
+  • Notice board looks untidy
+  • Single bin missing from a room
+  • Suggestion about campus aesthetics
+
+━━━ INPUT ━━━
 Title: ${title}
 Description: ${description}
 
-Return ONLY valid JSON (no markdown, no explanation):
+━━━ OUTPUT ━━━
+Return ONLY valid JSON — no markdown, no explanation:
 {
-  "category": "<one of: Facility, Electrical, Network, Safety, Sanitary, Academic, Security, Other>",
-  "priority": "<one of: low, medium, high, critical>"
-}
-
-Priority rules:
-- critical: safety hazard, fire risk, injury risk, total outage affecting everyone
-- high: affects many users, significant disruption
-- medium: moderate inconvenience, affects a group
-- low: minor issue, cosmetic, affects one or few`;
+  "priority": "<one of: critical, high, medium, low>",
+  "category": "<one of: Facility, Electrical, Network, Safety, Sanitary, Academic, Security, Other>"
+}`;
 
     const result = await model.generateContent(prompt);
-    const raw = stripJsonFences(result.response.text());
-    const parsed = JSON.parse(raw);
-    const validPriorities = ["low", "medium", "high", "critical"];
+    const rawText = result.response.text().trim();
+
+    // ── Pass 1: try clean JSON parse ──────────────────────────────────────────
+    let priority: string | null = null;
+    let category: string | null = null;
+    try {
+      const parsed = JSON.parse(stripJsonFences(rawText));
+      priority = parsed.priority ?? null;
+      category = parsed.category ?? null;
+    } catch {
+      // ── Pass 2: regex fallback — scan raw text for severity word ─────────────
+      // Handles cases where Gemini wraps the JSON in explanation text
+      const severityMatch = rawText.match(/\b(critical|high|medium|low)\b/i);
+      const categoryMatch = rawText.match(/\b(Facility|Electrical|Network|Safety|Sanitary|Academic|Security|Other)\b/i);
+      priority = severityMatch?.[1]?.toLowerCase() ?? null;
+      category = categoryMatch?.[1] ?? null;
+    }
+
+    const validPriorities = ["low", "medium", "high", "critical"] as const;
     const validCategories = ["Facility", "Electrical", "Network", "Safety", "Sanitary", "Academic", "Security", "Other"];
-    return {
-      category: validCategories.includes(parsed.category) ? parsed.category : "Facility",
-      priority: validPriorities.includes(parsed.priority) ? parsed.priority : "low",
-    };
+
+    const cleanPriority = priority && validPriorities.includes(priority as typeof validPriorities[number])
+      ? (priority as typeof validPriorities[number])
+      : null;
+
+    const cleanCategory = category && validCategories.includes(category)
+      ? category
+      : "Facility";
+
+    console.log("[Gemini] classifyIssue →", { title, cleanPriority, cleanCategory });
+
+    return { priority: cleanPriority, category: cleanCategory };
   } catch (err) {
     console.error("[Gemini] classifyIssue failed:", err);
+    // Return null priority — do NOT default to "low"
     return fallback;
   }
 }

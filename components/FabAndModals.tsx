@@ -38,9 +38,16 @@ export default function FabAndModals() {
     return () => document.removeEventListener("openReportModal", handleOpenReportModal);
   }, [isAdmin]);
 
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      showToast("Only JPG and PNG images are allowed.", "error", "image_not_supported");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
     setImage(file);
     const reader = new FileReader();
     reader.onloadend = () => setPreview(reader.result as string);
@@ -189,12 +196,12 @@ export default function FabAndModals() {
                       className="w-full border-2 border-dashed border-white/10 rounded-xl p-5 text-center hover:border-primary/50 hover:bg-surface-container-high transition-all cursor-pointer flex items-center justify-center gap-3"
                     >
                       <span className="material-symbols-outlined text-on-surface-variant">add_photo_alternate</span>
-                      <span className="text-sm text-on-surface-variant">Click to upload photo</span>
+                      <span className="text-sm text-on-surface-variant">Click to upload photo <span className="text-xs opacity-60">(JPG / PNG)</span></span>
                     </div>
                   )}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
                     ref={fileInputRef}
                     onChange={handleImageChange}
                     className="hidden"

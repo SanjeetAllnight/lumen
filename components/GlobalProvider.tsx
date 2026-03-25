@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
 import { useToast } from "./ToastProvider";
 import { useAuth } from "./AuthProvider";
 
@@ -144,36 +146,89 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   const addIssue = useCallback(
     async (newIssue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">, image?: File) => {
       try {
+        // ─── Step 1: Save complaint immediately (no AI, no image wait) ──────────
         const formData = new FormData();
-        formData.append("title", newIssue.title);
+        formData.append("title",       newIssue.title);
         formData.append("description", newIssue.description);
-        formData.append("location", newIssue.location || "");
-        formData.append("category", newIssue.category || "Facility");
-        formData.append("authorName", user?.displayName || "Student Reporter");
-        if (image) formData.append("image", image);
+        formData.append("location",    newIssue.location    || "");
+        formData.append("category",    newIssue.category    || "Facility");
+        formData.append("authorName",  user?.displayName    || "Student Reporter");
 
-        const res = await fetch("/api/issues", {
-          method: "POST",
-          body: formData,
-        });
+        const res = await fetch("/api/issues", { method: "POST", body: formData });
         if (!res.ok) throw new Error("Failed to create issue");
         const created: Issue = await res.json();
+
+        // Add to local state immediately — show as "processing" (priority null)
         setIssues((prev) => [{ ...created, isNew: true }, ...prev]);
-        showToast("Issue reported successfully! 🚨", "success", "campaign");
+        showToast("Complaint submitted! Processing in background... 🚨", "success", "campaign");
         addActivity({
-          type: "issue",
-          title: `🚨 New Report: ${created.title}`,
-          description: created.aiSummary || created.description,
-          tag: created.category,
-          icon: "campaign",
+          type:        "issue",
+          title:       `🚨 New Report: ${created.title}`,
+          description: created.description,
+          tag:         created.category,
+          icon:        "campaign",
         });
+
+        // ─── Step 2: Upload image in background ─────────────────────────────────
+        if (image) {
+          const allowed = ["image/jpeg", "image/jpg", "image/png"];
+          if (allowed.includes(image.type)) {
+            (async () => {
+              try {
+                const ext        = image.name.split(".").pop() || "jpg";
+                const storageRef = ref(storage, `issues/${Date.now()}.${ext}`);
+                await uploadBytes(storageRef, image, { contentType: image.type });
+                const imageUrl   = await getDownloadURL(storageRef);
+                // Patch Firestore doc
+                await fetch(`/api/issues/${created.id}`, {
+                  method:  "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body:    JSON.stringify({ imageUrl }),
+                });
+                // Patch local state so card shows image without reload
+                setIssues((prev) =>
+                  prev.map((i) => (i.id === created.id ? { ...i, imageUrl } : i))
+                );
+                console.log("[addIssue] Image patched:", imageUrl);
+              } catch (imgErr) {
+                console.error("[addIssue] Background image upload failed:", imgErr);
+              }
+            })();
+          } else {
+            console.warn("[addIssue] Rejected non-JPG/PNG file:", image.type);
+          }
+        }
+
+        // ─── Step 3: Run AI classification in background ────────────────────────
+        (async () => {
+          try {
+            const classifyRes = await fetch(`/api/issues/${created.id}/classify`, {
+              method:  "POST",
+              headers: { "Content-Type": "application/json" },
+              body:    JSON.stringify({ title: created.title, description: created.description }),
+            });
+            if (classifyRes.ok) {
+              const { priority, aiSummary, category } = await classifyRes.json();
+              // Patch local state so severity badge + summary update live
+              setIssues((prev) =>
+                prev.map((i) =>
+                  i.id === created.id ? { ...i, priority, aiSummary, category } : i
+                )
+              );
+              console.log("[addIssue] AI classify patched:", priority);
+            }
+          } catch (aiErr) {
+            console.error("[addIssue] Background AI classify failed:", aiErr);
+          }
+        })();
+
       } catch (err) {
         console.error("[addIssue]", err);
-        showToast("Failed to submit issue. Try again.", "error", "error");
+        showToast("Failed to submit complaint. Try again.", "error", "error");
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [showToast]
+    [showToast, user]
   );
 
   const getIssue = useCallback(async (id: string): Promise<Issue | null> => {

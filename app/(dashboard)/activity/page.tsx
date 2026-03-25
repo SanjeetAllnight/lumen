@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type Severity = "critical" | "high" | "medium" | "low";
+type Severity = "critical" | "high" | "medium" | "low" | "unknown";
 type FilterType = "all" | "issues" | "events";
 
 type Issue = {
@@ -16,7 +16,8 @@ type Issue = {
   location: string;
   status: string;
   upvotes: number;
-  severity?: Severity;
+  // Stored by the API as `priority` (AI-classified on submission)
+  priority?: Severity;
   createdAt: string | null;
 };
 
@@ -37,24 +38,26 @@ type ActivityItem =
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
+// Numeric sort order — lower = shown first. unknown sorts last.
 const SEVERITY_ORDER: Record<Severity, number> = {
   critical: 0,
-  high: 1,
-  medium: 2,
-  low: 3,
+  high:     1,
+  medium:   2,
+  low:      3,
+  unknown:  4,
 };
 
-/** Derive severity from existing issue fields if not stored */
-function deriveSeverity(issue: Issue): Severity {
-  if (issue.severity && ["critical", "high", "medium", "low"].includes(issue.severity)) {
-    return issue.severity;
+/**
+ * Reads the AI-assigned severity stored under the `priority` field in Firestore.
+ * Returns "unknown" when the field is absent or invalid — does NOT recalculate
+ * or default to "low". The single source of truth is what was stored at submission.
+ */
+function getStoredSeverity(issue: Issue): Severity {
+  const valid: Severity[] = ["critical", "high", "medium", "low"];
+  if (issue.priority && valid.includes(issue.priority)) {
+    return issue.priority;
   }
-  const s = issue.status?.toLowerCase() ?? "";
-  if (s === "critical" || s === "urgent") return "critical";
-  if (issue.upvotes >= 50) return "critical";
-  if (issue.upvotes >= 20) return "high";
-  if (issue.upvotes >= 5) return "medium";
-  return "low";
+  return "unknown";
 }
 
 function timeAgo(isoString: string | null): string {
@@ -70,11 +73,11 @@ function timeAgo(isoString: string | null): string {
 
 const SEVERITY_CONFIG: Record<Severity, {
   label: string;
-  color: string;       // text color class
-  bg: string;          // card bg tint
-  border: string;      // card border
-  badgeBg: string;     // badge pill bg
-  dot: string;         // dot color
+  color: string;
+  bg: string;
+  border: string;
+  badgeBg: string;
+  dot: string;
   icon: string;
 }> = {
   critical: {
@@ -106,19 +109,30 @@ const SEVERITY_CONFIG: Record<Severity, {
   },
   low: {
     label: "LOW",
-    color: "text-on-surface-variant",
-    bg: "bg-surface-container/30",
-    border: "border-white/5 hover:border-white/20",
-    badgeBg: "bg-white/5 text-on-surface-variant border-white/10",
-    dot: "bg-on-surface-variant",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/5",
+    border: "border-emerald-500/20 hover:border-emerald-400/40",
+    badgeBg: "bg-emerald-500/10 text-emerald-400 border-emerald-400/20",
+    dot: "bg-emerald-400",
     icon: "feedback",
+  },
+  unknown: {
+    label: "UNKNOWN",
+    color: "text-on-surface-variant",
+    bg: "bg-surface-container/20",
+    border: "border-white/5 hover:border-white/10",
+    badgeBg: "bg-white/5 text-on-surface-variant border-white/10",
+    dot: "bg-on-surface-variant/50",
+    icon: "help_outline",
   },
 };
 
 // ─── Issue Card ────────────────────────────────────────────────────────────────
 
 function IssueCard({ issue }: { issue: Issue }) {
-  const severity = deriveSeverity(issue);
+  const severity = getStoredSeverity(issue);
+  // Debug: verify severity matches Complaint section
+  console.log("Activity Severity:", issue.priority, "→ resolved as:", severity, "| issue id:", issue.id);
   const cfg = SEVERITY_CONFIG[severity];
   const isCritical = severity === "critical";
 
@@ -260,7 +274,7 @@ export default function ActivityStreamPage() {
   const [filter, setFilter] = useState<FilterType>("all");
 
   // Counters
-  const criticalCount = issues.filter((i) => deriveSeverity(i) === "critical").length;
+  const criticalCount = issues.filter((i) => getStoredSeverity(i) === "critical").length;
 
   // Fetch both in parallel
   const fetchData = useCallback(async () => {
@@ -294,8 +308,8 @@ export default function ActivityStreamPage() {
       activityItems.push({
         kind: "issue",
         data: issue,
-        // sort: severity first, then by recency
-        sortKey: SEVERITY_ORDER[deriveSeverity(issue)] * 1e12 - new Date(issue.createdAt ?? 0).getTime(),
+        // Sort: stored severity first (critical→high→medium→low→unknown), then recency
+        sortKey: SEVERITY_ORDER[getStoredSeverity(issue)] * 1e12 - new Date(issue.createdAt ?? 0).getTime(),
       });
     });
   }
@@ -396,14 +410,15 @@ export default function ActivityStreamPage() {
                   <span className="text-sm font-bold text-on-surface">{issues.length}</span>
                 </div>
                 <div className="flex gap-1 h-2">
-                  {(["critical", "high", "medium", "low"] as Severity[]).map((s) => {
-                    const count = issues.filter((i) => deriveSeverity(i) === s).length;
+                  {(["critical", "high", "medium", "low", "unknown"] as Severity[]).map((s) => {
+                    const count = issues.filter((i) => getStoredSeverity(i) === s).length;
                     const pct = issues.length > 0 ? (count / issues.length) * 100 : 0;
                     const bgMap: Record<Severity, string> = {
                       critical: "bg-error",
                       high: "bg-orange-400",
                       medium: "bg-yellow-400",
-                      low: "bg-on-surface-variant",
+                      low: "bg-emerald-400",
+                      unknown: "bg-on-surface-variant/30",
                     };
                     return pct > 0 ? (
                       <div
@@ -417,13 +432,14 @@ export default function ActivityStreamPage() {
                   {issues.length === 0 && <div className="bg-surface-container-high rounded-full h-full w-full" />}
                 </div>
                 <div className="flex gap-3 mt-2 flex-wrap">
-                  {(["critical", "high", "medium", "low"] as Severity[]).map((s) => {
-                    const count = issues.filter((i) => deriveSeverity(i) === s).length;
+                  {(["critical", "high", "medium", "low", "unknown"] as Severity[]).map((s) => {
+                    const count = issues.filter((i) => getStoredSeverity(i) === s).length;
                     const colorMap: Record<Severity, string> = {
                       critical: "text-error",
                       high: "text-orange-400",
                       medium: "text-yellow-400",
-                      low: "text-on-surface-variant",
+                      low: "text-emerald-400",
+                      unknown: "text-on-surface-variant/50",
                     };
                     return (
                       <span key={s} className={`text-[9px] font-bold uppercase ${colorMap[s]}`}>
@@ -464,13 +480,18 @@ export default function ActivityStreamPage() {
                     <span className={`text-xs font-bold uppercase tracking-wider ${cfg.color}`}>{s}</span>
                     <span className="text-[10px] text-on-surface-variant ml-auto">
                       {s === "critical" && "Immediate action required"}
-                      {s === "high" && "50+ upvotes"}
-                      {s === "medium" && "5+ upvotes"}
-                      {s === "low" && "Newly reported"}
+                      {s === "high" && "Significant disruption"}
+                      {s === "medium" && "Moderate inconvenience"}
+                      {s === "low" && "Minor / cosmetic issue"}
                     </span>
                   </div>
                 );
               })}
+              <div className="flex items-center gap-3 opacity-50">
+                <div className="w-2.5 h-2.5 rounded-full bg-on-surface-variant/40 shrink-0" />
+                <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">unknown</span>
+                <span className="text-[10px] text-on-surface-variant ml-auto">No AI data yet</span>
+              </div>
             </div>
           </div>
 
