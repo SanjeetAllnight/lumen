@@ -427,7 +427,7 @@ export default function EventsPage() {
           <p className="text-on-surface-variant text-sm mt-1">Discover and explore what's happening on campus</p>
         </div>
         {/* Add Event Button */}
-        {user && (
+        {user && !isAdmin && (
           <button
             id="add-event-btn"
             onClick={() => setShowModal(true)}
