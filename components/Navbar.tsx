@@ -56,18 +56,27 @@ export default function Navbar() {
       setNotifications([]);
       return;
     }
+
+    console.log("[Notification Listener] Active user ID:", user.uid);
+
     const q = query(
       collection(db, "notifications"),
       where("userId", "==", user.uid)
     );
+    
     const unsub = onSnapshot(q, (snap) => {
       const notifs: Notification[] = snap.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Notification[];
+      
+      console.log(`[Notification Listener] Fetched ${notifs.length} notifications`);
+      console.log("[Notification Listener] Notifications payload:", notifs);
+      
       notifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setNotifications(notifs);
     });
+
     return () => unsub();
   }, [user]);
 

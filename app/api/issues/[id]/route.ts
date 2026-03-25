@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, addDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";
@@ -57,36 +57,6 @@ export async function PATCH(
           timestamp: new Date().toISOString(),
         });
       }
-
-      // ─── Notification Fan-out ────────────────────────────────────────────────
-      try {
-        const issueRef = doc(db, "issues", id);
-        const issueSnap = await getDoc(issueRef);
-        if (issueSnap.exists()) {
-          const issueData = issueSnap.data();
-          const subscribers = issueData.subscribers || [];
-          if (subscribers.length > 0) {
-            const notifCol = collection(db, "notifications");
-            const now = new Date().toISOString();
-            const title = issueData.title || "an issue";
-            const readableStatus = status.replace("_", " ").toUpperCase();
-            
-            await Promise.all(
-              subscribers.map((userId: string) =>
-                addDoc(notifCol, {
-                  userId,
-                  issueId: id,
-                  message: `Status updated to ${readableStatus} for: ${title}`,
-                  read: false,
-                  createdAt: now,
-                })
-              )
-            );
-          }
-        }
-      } catch (err) {
-        console.error("[PATCH /api/issues/[id]] Failed to fan-out notifications", err);
-      }
     }
 
     // ─── Background async patches (image upload, AI classify) ──────────────────────────────
@@ -104,6 +74,51 @@ export async function PATCH(
     }
 
     await updateDoc(doc(db, "issues", id), payload);
+
+    // ─── Notification Fan-out (Run AFTER successful update) ─────────────────────
+    if (status !== undefined) {
+      try {
+        const issueRef = doc(db, "issues", id);
+        const issueSnap = await getDoc(issueRef);
+        if (issueSnap.exists()) {
+          const issueData = issueSnap.data();
+          const title = issueData.title || "an issue";
+          const readableStatus = status.replace("_", " ").toUpperCase();
+          
+          // Query dedicated prefs collection
+          const prefsQ = query(
+            collection(db, "issue_notification_prefs"),
+            where("issueId", "==", id)
+          );
+          const prefsSnap = await getDocs(prefsQ);
+          const subscriberIds = prefsSnap.docs.map(d => d.data().userId).filter(Boolean);
+
+          console.log(`[Notification] issueId: ${id} | subscribers found in prefs collection: ${subscriberIds.length}`);
+
+          if (subscriberIds.length > 0) {
+            const notifCol = collection(db, "notifications");
+            const now = new Date().toISOString();
+            
+            await Promise.all(
+              subscriberIds.map(async (userId: string) => {
+                console.log(`[Notification] Creating for userId: ${userId} (Issue: ${id})`);
+                await addDoc(notifCol, {
+                  userId,
+                  issueId: id,
+                  message: `Status updated to ${readableStatus} for: ${title}`,
+                  read: false,
+                  createdAt: now,
+                });
+                console.log(`[Notification] Created successfully for userId: ${userId}`);
+              })
+            );
+          }
+        }
+      } catch (err) {
+        console.error("[PATCH /api/issues/[id]] Failed to fan-out notifications", err);
+      }
+    }
+
     return NextResponse.json({ id, ...payload });
   } catch (error) {
     console.error("[PATCH /api/issues/[id]]", error);
