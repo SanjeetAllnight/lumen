@@ -76,7 +76,7 @@ function IssueCard({ issue, onUpvote }: { issue: Issue; onUpvote: (e: React.Mous
       <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
         <button
           onClick={(e) => { e.stopPropagation(); onUpvote(e); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:scale-95"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:upvote-pop btn-tap"
         >
           <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
           <span className="text-sm font-bold">{issue.upvotes}</span>
@@ -194,7 +194,7 @@ export default function ComplaintsPage() {
   }
 
   return (
-    <div className="px-8 pb-16 w-full">
+    <div className="px-8 pb-16 w-full page-fade">
       {/* Header */}
       <div className="flex justify-between items-end mb-8">
         <div>

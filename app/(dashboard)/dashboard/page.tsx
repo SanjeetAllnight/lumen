@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useGlobal } from '@/components/GlobalProvider';
 import { useAuth } from '@/components/AuthProvider';
 import { HeroIssueSkeleton, IssueListSkeleton } from '@/components/Skeletons';
+import { trendingScore } from '@/app/(dashboard)/trending/page';
 
 function timeAgo(dateString: string | null | undefined): string {
   if (!dateString) return "";
@@ -50,15 +51,9 @@ export default function DashboardPage() {
     );
   }
 
-  const PRIORITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-  const sortedByUpvotes = [...issues].sort((a, b) => {
-    const pa = PRIORITY_ORDER[a.priority ?? ""] ?? 4;
-    const pb = PRIORITY_ORDER[b.priority ?? ""] ?? 4;
-    if (pa !== pb) return pa - pb;
-    return (b.upvotes ?? 0) - (a.upvotes ?? 0);
-  });
-  const topIssue = sortedByUpvotes[0];
-  const trendingIssues = sortedByUpvotes.slice(1, 4); // next 3 for trending grid
+  const topTrending = [...issues].sort((a, b) => trendingScore(b) - trendingScore(a));
+  const topIssue = topTrending[0];
+  const trendingIssues = topTrending.slice(1, 3); // top 2 trending for grid
 
   // Upcoming events — take first 4
   const upcomingEvents = events.slice(0, 4);
@@ -196,12 +191,12 @@ export default function DashboardPage() {
       <section className="space-y-6">
         <div className="flex items-end justify-between px-2">
           <div className="space-y-1">
-            <span className="text-tertiary font-bold tracking-[0.2em] text-[10px] uppercase">Real-Time Hub</span>
-            <h2 className="text-3xl font-headline font-bold text-on-surface">Trending Issues</h2>
+            <span className="text-amber-400 font-bold tracking-[0.2em] text-[10px] uppercase flex items-center gap-1.5">🔥 Real-Time Ranking</span>
+            <h2 className="text-3xl font-headline font-bold text-on-surface">Trending Now</h2>
           </div>
           <button
-            onClick={() => router.push("/complaints")}
-            className="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium flex items-center gap-2"
+            onClick={() => router.push("/trending")}
+            className="text-on-surface-variant hover:text-amber-400 transition-colors text-sm font-medium flex items-center gap-2"
           >
             View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
@@ -220,10 +215,13 @@ export default function DashboardPage() {
                 onClick={() => router.push(`/issue/${issue.id}`)}
                 className="group card-hover glass-panel rounded-[2rem] p-6 border border-white/5 hover:border-primary/30 transition-all duration-300 flex flex-col cursor-pointer min-h-[200px]"
               >
-                <div className="flex justify-between items-start mb-4">
-                  <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
-                    {statusLabel(issue.status)}
-                  </span>
+                <div className="flex flex-wrap justify-between items-start mb-4 gap-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">🔥 Trending</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor(issue.status)}`}>
+                      {statusLabel(issue.status)}
+                    </span>
+                  </div>
                   <span className="text-[10px] text-on-surface-variant/50">{timeAgo(issue.createdAt)}</span>
                 </div>
                 <h3 className="text-lg font-headline font-bold text-on-surface leading-snug mb-2 group-hover:text-primary transition-colors">

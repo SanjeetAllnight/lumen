@@ -19,6 +19,8 @@ export default function FabAndModals() {
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
+  const [shakeKey, setShakeKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Feedback form state
@@ -59,12 +61,25 @@ export default function FabAndModals() {
     setReportLoc("");
     setImage(null);
     setPreview("");
+    setFieldErrors({});
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reportTitle.trim() || !reportDesc.trim() || !reportLoc || isSubmitting) return;
+
+    // Inline validation
+    const errors: Record<string, boolean> = {};
+    if (!reportTitle.trim()) errors.title = true;
+    if (!reportDesc.trim()) errors.desc = true;
+    if (!reportLoc) errors.loc = true;
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setShakeKey(k => k + 1); // trigger re-shake
+      return;
+    }
+    setFieldErrors({});
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
@@ -205,40 +220,43 @@ export default function FabAndModals() {
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Title *</label>
                   <input
-                    required
                     value={reportTitle}
-                    onChange={(e) => setReportTitle(e.target.value)}
+                    onChange={(e) => { setReportTitle(e.target.value); setFieldErrors(p => ({ ...p, title: false })); }}
                     type="text"
-                    className="w-full bg-surface-container-high border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors"
+                    key={fieldErrors.title ? `title-${shakeKey}` : 'title'}
+                    className={`w-full bg-surface-container-high border rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors ${fieldErrors.title ? 'field-error field-shake' : 'border-white/10'}`}
                     placeholder="E.g., Broken projector in Hall 4"
                   />
+                  {fieldErrors.title && <p className="text-error text-[11px] mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-[13px]">error</span>Title is required</p>}
                 </div>
 
                 {/* Location */}
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Location *</label>
                   <select
-                    required
                     value={reportLoc}
-                    onChange={(e) => setReportLoc(e.target.value)}
-                    className="w-full bg-surface-container-high border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors appearance-none custom-select"
+                    onChange={(e) => { setReportLoc(e.target.value); setFieldErrors(p => ({ ...p, loc: false })); }}
+                    key={fieldErrors.loc ? `loc-${shakeKey}` : 'loc'}
+                    className={`w-full bg-surface-container-high border rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors appearance-none custom-select ${fieldErrors.loc ? 'field-error field-shake' : 'border-white/10'}`}
                   >
                     <option value="" disabled>Select location...</option>
                     {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
+                  {fieldErrors.loc && <p className="text-error text-[11px] mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-[13px]">error</span>Location is required</p>}
                 </div>
 
                 {/* Description */}
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Description *</label>
                   <textarea
-                    required
                     value={reportDesc}
-                    onChange={(e) => setReportDesc(e.target.value)}
+                    onChange={(e) => { setReportDesc(e.target.value); setFieldErrors(p => ({ ...p, desc: false })); }}
                     rows={4}
-                    className="w-full bg-surface-container-high border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors resize-none"
+                    key={fieldErrors.desc ? `desc-${shakeKey}` : 'desc'}
+                    className={`w-full bg-surface-container-high border rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors resize-none ${fieldErrors.desc ? 'field-error field-shake' : 'border-white/10'}`}
                     placeholder="Describe the issue in detail..."
                   />
+                  {fieldErrors.desc && <p className="text-error text-[11px] mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-[13px]">error</span>Description is required</p>}
                 </div>
               </form>
             </div>
@@ -248,7 +266,7 @@ export default function FabAndModals() {
                 form="report-form"
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 bg-primary text-on-primary rounded-xl font-bold uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-primary text-on-primary rounded-xl font-bold uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 btn-tap"
               >
                 {isSubmitting ? (
                   <><span className="material-symbols-outlined text-xl animate-spin">progress_activity</span> Submitting...</>
