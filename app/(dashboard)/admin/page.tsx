@@ -28,6 +28,7 @@ export default function AdminIntelligencePage() {
   const [technician, setTechnician] = useState("");
   const [note, setNote] = useState("");
 
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
   // Redirect if not admin
@@ -222,6 +223,9 @@ export default function AdminIntelligencePage() {
               displayedIssues.map((issue) => {
                 const conf = getStatusConfig(issue.status);
                 const isSelected = selectedIssueIds.includes(issue.id);
+                if (issue.imageUrl) {
+                  console.log("Complaint Image:", issue.imageUrl);
+                }
                 return (
                   <div key={issue.id} className={`glass-panel rounded-2xl p-6 border transition-all relative overflow-hidden group flex gap-5 ${isSelected ? 'border-primary/50 bg-primary/5' : `border-l-2 border-l-${conf.color.replace('text-', '')} border-white/5`}`}>
                     {/* Checkbox */}
@@ -248,6 +252,21 @@ export default function AdminIntelligencePage() {
                       </div>
                       <h3 className="font-headline font-bold text-on-surface text-lg mb-1">{issue.title}</h3>
                       <p className="text-xs text-on-surface-variant mb-4 line-clamp-2">{issue.aiSummary || issue.description}</p>
+
+                      {issue.imageUrl && (
+                        <div className="mb-4 rounded-xl overflow-hidden border border-white/5 bg-surface-container-low max-w-sm">
+                          {/* Display image inside the complaint card */}
+                          <img
+                            src={issue.imageUrl}
+                            alt="Complaint attachment"
+                            className="w-full h-32 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedImage(issue.imageUrl!);
+                            }}
+                          />
+                        </div>
+                      )}
 
                       <div className="flex flex-col gap-1 mb-6">
                         <span className="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold">Location</span>
@@ -389,6 +408,29 @@ export default function AdminIntelligencePage() {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-size Image Preview Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center">
+            <button 
+              className="absolute -top-12 right-0 md:-right-12 text-white hover:text-error bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"
+              onClick={() => setSelectedImage(null)}
+            >
+              <span className="material-symbols-outlined text-2xl">close</span>
+            </button>
+            <img 
+              src={selectedImage} 
+              alt="Full size expanded complaint preview" 
+              className="w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()} 
+            />
           </div>
         </div>
       )}

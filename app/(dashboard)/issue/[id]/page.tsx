@@ -39,7 +39,7 @@ function StatusBadge({ status }: { status: string }) {
 export default function IssueDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const { upvoteIssue, addComment, getIssue, getComments, issues } = useGlobal();
+  const { upvoteIssue, addComment, getIssue, getComments, issues, currentUserId } = useGlobal();
   const { showToast } = useToast();
   const [issue, setIssue] = useState<Issue | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -114,6 +114,7 @@ export default function IssueDetailPage() {
   const timeline = [...(issue.updates || [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   const fullTimeline = [...timeline, { status: "reported", note: `Issue reported by Alex Rivera`, timestamp: issue.createdAt }];
   const sortedComments = [...comments].sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
+  const hasUpvoted = issue.upvotedBy?.includes(currentUserId) ?? false;
 
   return (
     <div className="flex-1 md:p-10 max-w-7xl mx-auto w-full">
@@ -173,22 +174,31 @@ export default function IssueDetailPage() {
             </div>
           </div>
 
-          {/* Description + AI Summary */}
+          {/* Description */}
           <div className="glass-panel p-8 rounded-[2rem] border border-outline-variant/10">
-            {issue.aiSummary && (
-              <div className="flex items-start gap-3 mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                <span className="material-symbols-outlined text-primary mt-0.5">auto_awesome</span>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">AI Summary · Updates based on community discussion</p>
-                  <p className="text-sm text-primary-fixed-dim/90 italic leading-relaxed">{issue.aiSummary}</p>
-                </div>
-              </div>
-            )}
             <p className="text-on-surface-variant leading-relaxed font-body whitespace-pre-line">{issue.description}</p>
             <div className="mt-8">
-              <button onClick={() => upvoteIssue(issue.id)} className="flex items-center gap-2 px-6 py-3 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-full transition-all group active:scale-95">
-                <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform" style={{ fontVariationSettings: "'FILL' 1" }}>thumb_up</span>
-                <span className="text-sm font-bold text-primary">{issue.upvotes} Upvotes</span>
+              <button
+                onClick={() => upvoteIssue(issue.id)}
+                className={`flex items-center gap-2.5 px-6 py-3 rounded-full transition-all duration-200 group active:scale-95 ${
+                  hasUpvoted
+                    ? 'bg-red-500/15 hover:bg-red-500/25 border border-red-500/50 hover:border-red-500/70'
+                    : 'bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/50 hover:border-emerald-500/70'
+                }`}
+              >
+                <span
+                  className={`material-symbols-outlined transition-all group-hover:scale-110 ${
+                    hasUpvoted ? 'text-red-400' : 'text-emerald-400'
+                  }`}
+                  style={{ fontVariationSettings: hasUpvoted ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  {hasUpvoted ? 'thumb_down' : 'thumb_up'}
+                </span>
+                <span className={`text-sm font-bold transition-colors ${
+                  hasUpvoted ? 'text-red-400' : 'text-emerald-400'
+                }`}>
+                  {hasUpvoted ? `${issue.upvotes} · Dismiss Issue` : `${issue.upvotes} · Support Issue`}
+                </span>
               </button>
             </div>
           </div>

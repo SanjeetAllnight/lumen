@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { useToast } from "./ToastProvider";
@@ -27,6 +27,7 @@ export type Issue = {
   technician?: string;
   updates?: { status: string; note: string; timestamp: string }[];
   upvotes: number;
+  upvotedBy?: string[];
   authorName?: string;
   createdAt: string;
   comments?: Comment[];
@@ -61,6 +62,8 @@ type GlobalContextType = {
   events: CampusEvent[];
   activities: Activity[];
   isLoading: boolean;
+  upvotedIssueIds: Set<string>;
+  currentUserId: string;
   upvoteIssue: (id: string) => void;
   addComment: (issueId: string, content: string) => Promise<Comment | null>;
   addIssue: (issue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">, image?: File) => Promise<void>;
@@ -85,13 +88,33 @@ export const getStatusConfig = (status: string) => {
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 
+// Returns a stable anonymous ID for this browser (survives page refresh)
+function getAnonUserId(): string {
+  if (typeof window === "undefined") return "anon";
+  let uid = localStorage.getItem("lumen_anon_uid");
+  if (!uid) {
+    uid = `anon_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem("lumen_anon_uid", uid);
+  }
+  return uid;
+}
+
 export function GlobalProvider({ children }: { children: ReactNode }) {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [events, setEvents] = useState<CampusEvent[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Set of issue IDs the current user has upvoted (seeded from localStorage on mount)
+  const [upvotedIssueIds, setUpvotedIssueIds] = useState<Set<string>>(new Set());
+  // Ref mirror — always current, safe to read inside useCallback without stale-closure issues
+  const upvotedIssueIdsRef = useRef<Set<string>>(new Set());
+  // Per-issue in-flight guard to prevent spam clicks
+  const upvoteInflight = useRef<Set<string>>(new Set());
   const { showToast } = useToast();
   const { user } = useAuth();
+  
+  // Compute it once per render
+  const currentUserId = (user?.uid) ?? getAnonUserId();
 
   const fetchData = useCallback(async () => {
     try {
@@ -112,36 +135,99 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Seed upvotedIssueIds from localStorage on first client render
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem("lumen_upvoted_issues");
+    if (stored) {
+      try {
+        const arr: string[] = JSON.parse(stored);
+        const s = new Set<string>(arr);
+        upvotedIssueIdsRef.current = s;
+        setUpvotedIssueIds(s);
+      } catch { /* ignore malformed */ }
+    }
+  }, []);
+
   const upvoteIssue = useCallback((id: string) => {
-    const upvotedKey = `upvoted_${id}`;
-    if (typeof window !== "undefined" && localStorage.getItem(upvotedKey)) {
-      showToast("You've already supported this issue! 👍", "error", "thumb_up");
-      return;
-    }
+    // Prevent spam clicks while a request is in flight
+    if (upvoteInflight.current.has(id)) return;
+    upvoteInflight.current.add(id);
+
+    // Read from the ref — always the current value, no stale closure
+    const isUpvoted = upvotedIssueIdsRef.current.has(id);
+    const userId = currentUserId;
+    const action = isUpvoted ? "remove" : "add";
+    const delta = isUpvoted ? -1 : 1;
+
+    console.log("[upvoteIssue] Has Upvoted:", isUpvoted, "→ action:", action);
+
+    // ── Optimistic UI update ──────────────────────────────────────────────────
+    const next = new Set(upvotedIssueIdsRef.current);
+    if (isUpvoted) next.delete(id); else next.add(id);
+    upvotedIssueIdsRef.current = next;                         // keep ref in sync first
+    setUpvotedIssueIds(new Set(next));                         // trigger re-render
     if (typeof window !== "undefined") {
-      localStorage.setItem(upvotedKey, "true");
+      localStorage.setItem("lumen_upvoted_issues", JSON.stringify([...next]));
     }
-    // Optimistic update
+
     setIssues((prev) =>
-      prev.map((issue) =>
-        issue.id === id ? { ...issue, upvotes: issue.upvotes + 1 } : issue
-      )
+      prev.map((issue) => {
+        if (issue.id === id) {
+          const arr = issue.upvotedBy || [];
+          return {
+            ...issue,
+            upvotes: Math.max(0, issue.upvotes + delta),
+            upvotedBy: isUpvoted ? arr.filter(uid => uid !== userId) : [...arr, userId]
+          };
+        }
+        return issue;
+      })
     );
-    showToast("Your support has been counted! 👍", "success", "thumb_up");
-    fetch(`/api/issues/${id}/upvote`, { method: "PATCH" }).catch((err) => {
-      console.error("[upvoteIssue]", err);
-      // Roll back on failure
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(upvotedKey);
-      }
-      setIssues((prev) =>
-        prev.map((issue) =>
-          issue.id === id ? { ...issue, upvotes: issue.upvotes - 1 } : issue
-        )
-      );
-      showToast("Upvote failed. Please try again.", "error", "error");
-    });
-  }, [showToast]);
+    showToast(
+      isUpvoted ? "Support removed." : "Your support has been counted! 👍",
+      isUpvoted ? "info" : "success",
+      isUpvoted ? "thumb_down" : "thumb_up"
+    );
+
+    // ── Backend sync ─────────────────────────────────────────────────────────
+    fetch(`/api/issues/${id}/upvote`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, userId }),
+    })
+      .then((res) => { if (!res.ok) throw new Error("upvote failed"); })
+      .catch((err) => {
+        console.error("[upvoteIssue] rollback:", err);
+        // Roll back — mirror the inverse operation
+        const rolled = new Set(upvotedIssueIdsRef.current);
+        if (isUpvoted) rolled.add(id); else rolled.delete(id);
+        upvotedIssueIdsRef.current = rolled;
+        setUpvotedIssueIds(new Set(rolled));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("lumen_upvoted_issues", JSON.stringify([...rolled]));
+        }
+        setIssues((prev) =>
+          prev.map((issue) => {
+            if (issue.id === id) {
+              const arr = issue.upvotedBy || [];
+              return {
+                ...issue,
+                upvotes: Math.max(0, issue.upvotes - delta),
+                upvotedBy: isUpvoted ? [...arr, userId] : arr.filter(uid => uid !== userId)
+              };
+            }
+            return issue;
+          })
+        );
+        showToast("Action failed. Please try again.", "error", "error");
+      })
+      .finally(() => {
+        upvoteInflight.current.delete(id);
+      });
+  // upvotedIssueIds intentionally excluded — we read from the ref to avoid stale closure
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showToast, user]);
 
   const addIssue = useCallback(
     async (newIssue: Omit<Issue, "id" | "upvotes" | "createdAt" | "comments" | "isNew">, image?: File) => {
@@ -314,6 +400,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   return (
     <GlobalContext.Provider value={{
       issues, events, activities, isLoading,
+      upvotedIssueIds, currentUserId,
       upvoteIssue, addComment, addIssue, getIssue, getComments, addFeedback, addActivity,
       updateEventStatus, updateIssueStatus,
     }}>
