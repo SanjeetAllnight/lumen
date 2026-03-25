@@ -83,7 +83,7 @@ export const LandingFooter = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 px-4">
             <div className="md:col-span-2">
               <h3 className="font-heading font-bold text-3xl text-textMain mb-4 flex items-center gap-2">
-                <span className="text-primary">Campus</span> Connect
+                LUMEN
               </h3>
               <p className="font-body text-textMuted max-w-sm mb-8 text-lg">
                 The central operational dashboard for a secure, responsive, and student-powered campus environment.
@@ -128,7 +128,7 @@ export const LandingFooter = () => {
           </div>
           
           <div className="border-t border-border pt-8 mt-16 flex flex-col md:flex-row justify-between items-center gap-4 text-sm font-mono text-textMuted">
-            <p>© {new Date().getFullYear()} Campus Connect. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} LUMEN. All rights reserved.</p>
             <p>Built with precision.</p>
           </div>
         </div>

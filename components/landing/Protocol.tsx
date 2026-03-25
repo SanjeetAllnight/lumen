@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useLayoutEffect, useRef } from 'react';
-import { Eye, Zap, RefreshCw } from 'lucide-react';
+import { Eye, Zap } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -30,19 +30,6 @@ const cardsData = [
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden opacity-10">
         <div className="w-full h-full border-[1px] border-accent/20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         <div className="absolute top-0 left-0 w-full h-[2px] bg-accent shadow-[0_0_15px_rgba(255,45,85,0.8)] animate-[scan_3s_ease-in-out_infinite_alternate]" style={{ animationName: 'scan' }}></div>
-      </div>
-    )
-  },
-  {
-    id: '03',
-    title: 'Share & Collaborate',
-    desc: 'Book spaces, exchange study materials, and build a unified campus network.',
-    color: 'bg-surfaceHover',
-    Icon: RefreshCw,
-    iconColor: 'text-textMain',
-    AnimationContent: () => (
-      <div className="absolute inset-0 flex items-center justify-center opacity-10">
-        <RefreshCw className="w-64 h-64 text-textMain animate-spin-slow" />
       </div>
     )
   }
